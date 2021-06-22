@@ -40,6 +40,7 @@ import numpy as np
 
 import sqlite3
 from sqlite3 import Error
+from datetime import datetime
 
 from selenium import webdriver
 
@@ -86,7 +87,7 @@ def reshape_options_for_chart(p_df, price, p_expiry):
     p_df['put_call'] = p_df['contractSymbol'].apply(lambda x: x[10])
     p_df = p_df.groupby(['strike', 'put_call'])['openInterest'].sum().unstack().dropna()
     # p_df = p_df.groupby(['strike', 'put_call'])['openInterest'].sum().unstack().fillna(0.001)
-    p_df = p_df.replace(0.,0.1)
+    p_df = p_df.replace(0., 0.1)
     p_df = p_df[~p_df.isin([0., np.nan, np.inf, -np.inf]).any(1)]
 
     p_df['total'] = p_df.P + p_df.C
@@ -120,8 +121,9 @@ def build_ax(p_df, p_ax, p_date, p_price):
 def print_p_c_ratio_yf(p_ticker):
     tsla = yf.Ticker(p_ticker, session=session)
     price = tsla.get_info()['regularMarketPrice']
-    load_dt = str(yf.download(tickers='TSLA', period='1d', interval='1d').reset_index()['Date'].values[0])[
-              :10]  # YYYY-MM-DD format
+    # load_dt = str(yf.download(tickers='TSLA', period='1d', interval='1d').reset_index()['Date'].values[0])[
+    #           :10]  # YYYY-MM-DD format
+    load_dt = datetime.today().strftime('%Y-%m-%d')
     # tsla_oc = tsla.option_chain(p_date)
     df_p_c, weekly_fridays = [], []
     for i in range(3):

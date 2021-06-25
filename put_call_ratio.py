@@ -77,7 +77,8 @@ def store_data(p_df, p_load_dt):
     # import pdb; pdb.set_trace()
     p_df['load_dt'] = p_load_dt
     insert_qry = ' insert or replace into tsla_op (' + ','.join(p_df.columns) + ') values (?,?,?,?,?,?,?,?) '
-    conn = create_connection('./data_store.sqlite')
+
+    conn = create_connection(os.getcwd()+'/data_store.sqlite')
     conn.executemany(insert_qry, p_df.to_records(index=False))
     conn.commit()
 
@@ -104,16 +105,37 @@ def reshape_options_for_chart(p_df, price, p_expiry):
 
 
 def build_ax(p_df, p_ax, p_date, p_price):
-    p_df['p_c_ratio'].plot(kind='line', color='r', ax=p_ax)
-    p_df['c_p_ratio'].plot(kind='line', color='g', ax=p_ax)
+    # p_df['p_c_ratio'].plot(kind='line', color='r', ax=p_ax)
+    # p_df['c_p_ratio'].plot(kind='line', color='g', ax=p_ax)
     p_df['P'].plot(kind='bar', ax=p_ax, color='r', alpha=.4, secondary_y=True)
     p_df['C'].plot(kind='bar', ax=p_ax, color='g', alpha=.4, secondary_y=True)
     p_ax.set_xticklabels(p_df.strike.values, rotation=90, fontsize=9)
     p_ax.get_xaxis().set_minor_formatter(matplotlib.ticker.FormatStrFormatter('% 3.0f'))
     p_ax.set_ylim(0, 10)
-    p_ax.annotate('STRIKE', xy=(600, 1000), xytext=(600, 2000), arrowprops={'facecolor': 'black', 'shrink': 0.05})
     p_ax.right_ax.set_ylim(0, 12000)
     p_ax.set_title(p_date)
+    p_ax.grid(True)
+    _tlst = [x for x in p_df.strike.values if x < p_price]
+    _uptlst = [x for x in p_df.strike.values if x > p_price]
+    x_cordinate_annotate = len(_tlst)
+    if ((len(p_df.strike.values) - len(_uptlst)) == len(_tlst)) and p_df.strike.values[x_cordinate_annotate] != p_price:
+        _tmp = list()
+        _tmp = [p_df.strike.values[x_cordinate_annotate], p_price, p_df.strike.values[x_cordinate_annotate - 1]]
+        sorted_list = sorted(_tmp)
+        normalized_sorted_list = (sorted_list - sorted_list[0])
+        normalized_sorted_list = (normalized_sorted_list) / normalized_sorted_list[-1]
+        x_cordinate_annotate = x_cordinate_annotate - 1 + normalized_sorted_list[1]
+        # pdb.set_trace()
+
+    # x_cordinate_annotate = len(_tlst)
+    text_cordinate_annotate = x_cordinate_annotate / len(p_df.strike.values) - 0.01
+
+    bbox_props = dict(boxstyle='round', fc='w', ec='k', lw=1)
+    p_ax.annotate(f'{p_price:.2f}', (x_cordinate_annotate, 0), xytext=(text_cordinate_annotate, 0.78),
+                  textcoords='axes fraction',
+                  arrowprops=dict(facecolor='blue'), bbox=bbox_props)
+    p_ax.annotate('Current Stock Price', xy=(600, 1000), xytext=(600, 2000),
+                  arrowprops={'facecolor': 'black', 'shrink': 0.05})
 
     return p_ax
 
@@ -121,9 +143,9 @@ def build_ax(p_df, p_ax, p_date, p_price):
 def print_p_c_ratio_yf(p_ticker):
     tsla = yf.Ticker(p_ticker, session=session)
     price = tsla.get_info()['regularMarketPrice']
-    # load_dt = str(yf.download(tickers='TSLA', period='1d', interval='1d').reset_index()['Date'].values[0])[
-    #           :10]  # YYYY-MM-DD format
-    load_dt = datetime.today().strftime('%Y-%m-%d')
+    price = tsla.history().tail(1)['Close'].values[0]
+    load_dt = str(yf.download(tickers='TSLA', period='1d', interval='1d').reset_index()['Date'].values[0])[
+              :10]  # YYYY-MM-DD format
     # tsla_oc = tsla.option_chain(p_date)
     df_p_c, weekly_fridays = [], []
     for i in range(3):
@@ -132,6 +154,7 @@ def print_p_c_ratio_yf(p_ticker):
         weekly_fridays.append(weekly_friday)
         df_p_c.append(reshape_options_for_chart(tsla_oc, price, weekly_friday))
 
+    # load_dt = tsla.option_chain(weekly_friday)[0].lastTradeDate.max().strftime('%Y-%m-%d')
     store_data(pd.concat(df_p_c), p_load_dt=load_dt)  # store into sqlite file
 
     fig, (ax0, ax1, ax2) = plt.subplots(3, 1, figsize=(15, 6), constrained_layout=True, sharex=False, num="-")

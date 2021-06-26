@@ -27,7 +27,7 @@ from datetime import timedelta
 
 next_friday = dparse.parse("Friday")
 one_week = timedelta(days=7)
-weekly_expiry = [next_friday + one_week * i for i in range(3)]
+weekly_expiry = [next_friday + one_week * i for i in range(4)]
 
 matplotlib.use('TkAgg')
 
@@ -105,8 +105,8 @@ def reshape_options_for_chart(p_df, price, p_expiry):
 
 
 def build_ax(p_df, p_ax, p_date, p_price):
-    # p_df['p_c_ratio'].plot(kind='line', color='r', ax=p_ax)
-    # p_df['c_p_ratio'].plot(kind='line', color='g', ax=p_ax)
+    p_df['p_c_ratio'].plot(kind='line', color='r', ax=p_ax)
+    p_df['c_p_ratio'].plot(kind='line', color='g', ax=p_ax)
     p_df['P'].plot(kind='bar', ax=p_ax, color='r', alpha=.4, secondary_y=True)
     p_df['C'].plot(kind='bar', ax=p_ax, color='g', alpha=.4, secondary_y=True)
     p_ax.set_xticklabels(p_df.strike.values, rotation=90, fontsize=9)
@@ -133,9 +133,10 @@ def build_ax(p_df, p_ax, p_date, p_price):
     bbox_props = dict(boxstyle='round', fc='w', ec='k', lw=1)
     p_ax.annotate(f'{p_price:.2f}', (x_cordinate_annotate, 0), xytext=(text_cordinate_annotate, 0.78),
                   textcoords='axes fraction',
-                  arrowprops=dict(facecolor='blue'), bbox=bbox_props)
-    p_ax.annotate('Current Stock Price', xy=(600, 1000), xytext=(600, 2000),
-                  arrowprops={'facecolor': 'black', 'shrink': 0.05})
+                  arrowprops=dict(arrowstyle="->",
+                            connectionstyle="angle3"), bbox=bbox_props)
+    # p_ax.annotate('Current Stock Price', xy=(600, 1000), xytext=(600, 2000),
+    #               arrowprops={'facecolor': 'black', 'shrink': 0.005})
 
     return p_ax
 
@@ -148,7 +149,7 @@ def print_p_c_ratio_yf(p_ticker):
               :10]  # YYYY-MM-DD format
     # tsla_oc = tsla.option_chain(p_date)
     df_p_c, weekly_fridays = [], []
-    for i in range(3):
+    for i in range(1,4):
         weekly_friday = weekly_expiry[i].strftime('%Y-%m-%d')
         tsla_oc = tsla.option_chain(weekly_friday)
         weekly_fridays.append(weekly_friday)

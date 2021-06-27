@@ -60,7 +60,7 @@ def oic_api_call():
     response = requests.get(url, headers=headers)
     # rws = response.json()['data']['rows']
 
-    df = df = pd.DataFrame.from_dict(response.json()['data']['table']['rows'])
+    df = pd.DataFrame.from_dict(response.json()['data']['table']['rows'])
     df['expirygroup'] = df['expirygroup'].apply(lambda x: pd.to_datetime(x))
     df['expirygroup'].ffill(axis=0, inplace=True)
     df.dropna(inplace=True)

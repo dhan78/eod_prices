@@ -18,6 +18,12 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from dash.dependencies import Input, Output
+import simplejson as json
+import re
+
+headers = {
+    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'}
 
 
 def create_connection(db_file):
@@ -38,8 +44,6 @@ def store_data(p_df, p_load_dt):
     conn.commit()
 
 def oic_api_call():
-    headers = {
-        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'}
     url = 'https://api.nasdaq.com/api/quote/TSLA/option-chain?assetclass=stocks&limit=600&fromdate=2021-06-20&todate=2021-09-30&excode=oprac&callput=callput&money=at&type=all'
     response = requests.get(url, headers=headers)
     # rws = response.json()['data']['rows']
@@ -54,9 +58,17 @@ def oic_api_call():
     store_data(p_df=df, p_load_dt=load_dt)
     return df
 
+def get_lastSalePrice():
+    url = 'https://api.nasdaq.com/api/quote/TSLA/info?assetclass=stocks'
+    response = requests.get(url, headers=headers)
+    lastSalePrice=response.json()['data']['primaryData']['lastSalePrice']
+    float(re.findall("\d+\.\d+", lastSalePrice)[0])
+    return lastSalePrice
+
 
 def get_charts():
     df = oic_api_call()
+    current_price = get_lastSalePrice()
 
     num_or_charts = len(df.expirygroup.unique())
 
@@ -66,15 +78,19 @@ def get_charts():
         expirydt = expiry[0]
         df_expiry = expiry[1]
         df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
+        # Call Open Interest
         fig.append_trace(go.Bar(x=df_expiry.strike.values,
                                 y=df_expiry.c_Openinterest.values,
                                 name='Call Open Interest',
-                                marker_color='rgb(0,128,0)'
+                                marker_color='rgb(0,128,0)',
+                                opacity=.8
                                 ), row=i + 1, col=1)
+        # Put Open Interest
         fig.append_trace(go.Bar(x=df_expiry.strike.values,
                                 y=df_expiry.p_Openinterest.values,
                                 name='Put Open Interest',
-                                marker_color='rgb(200, 0, 0)'
+                                marker_color='rgb(225, 0, 0)',
+                                opacity=.8
                                 ), row=i + 1, col=1)
         #Call Volume
         fig.append_trace(go.Bar(x=df_expiry.strike.values,
@@ -90,6 +106,61 @@ def get_charts():
                                 marker_color='rgb(300,0,0)',
                                 opacity=.1
                                 ), row=i + 1, col=1)
+        # Current Price
+        fig.append_trace(go.Scatter(
+            x=[current_price],
+            y=[5000],
+            text=[str(current_price)],
+            name="LastTradePrice",
+            mode="lines+markers+text",
+            opacity=0.5,
+            textfont=dict(
+                family="sans serif",
+                size=12,
+                color="blue"
+            )
+        ), row=i + 1, col=1)
+
+    # for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
+    #     expirydt = expiry[0]
+    #     df_expiry = expiry[1]
+    #     df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
+    #     # Call price Change
+    #     df_expiry['c_xy'] = df_expiry.strike.astype(str) + ',' + df_expiry.c_Last.astype(str)
+    #     df_expiry['c_axy'] = df_expiry.strike.astype(str) + ',' + (df_expiry.c_Last - df_expiry.c_Change).astype(str)
+    #     # Put price Change
+    #     df_expiry['p_xy'] = df_expiry.strike.astype(str) + ',' + df_expiry.p_Last.astype(str)
+    #     df_expiry['p_axy'] = df_expiry.strike.astype(str) + ',' + (df_expiry.p_Last - df_expiry.p_Change).astype(str)
+    #     df_expiry.set_index('strike',inplace=True)
+    #     for c_xy, c_axy in zip(df_expiry['c_xy'],df_expiry['c_axy']):
+    #         fig.add_annotation(
+    #             x=c_xy.split(',')[0],  # arrows' head
+    #             y=c_xy.split(',')[1],  # arrows' head
+    #             ax=c_axy.split(',')[0],  # arrows' tail
+    #             ay=c_axy.split(',')[1],  # arrows' tail
+    #             xref='x2',
+    #             yref='y2',
+    #             # axref='x',
+    #             # ayref='y',
+    #             text='',  # if you want only the arrow
+    #             showarrow=True,
+    #             arrowhead=3,
+    #             arrowsize=1,
+    #             arrowwidth=1,
+    #             arrowcolor='black'
+    #         )
+
+        # fig.append_trace(go.Bar(x=df_expiry.strike.values,
+        #                         y=df_expiry.c_Change.values,
+        #                         name='Call price Change',
+        #                         marker_color='rgb(0,128,0)'
+        #                         ), row=i + 1, col=2)
+        # # Put price Change
+        # fig.append_trace(go.Bar(x=df_expiry.strike.values,
+        #                         y=df_expiry.p_Change.values,
+        #                         name='Put price Change',
+        #                         marker_color='rgb(200, 0, 0)'
+        #                         ), row=i + 1, col=2)
 
 
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
@@ -109,12 +180,12 @@ def get_charts():
         #     range=[100,10000]
         # ),
         # xaxis=dict(dtick=2.5,tickangle=-90),
-        # legend=dict(
-        #     x=0,
-        #     y=1.0,
-        #     bgcolor='rgba(255, 255, 255, 0)',
-        #     bordercolor='rgba(255, 255, 255, 0)'
-        # ),
+        legend=dict(
+            x=0,
+            y=1.0,
+            bgcolor='rgba(255, 255, 255, 0)',
+            bordercolor='rgba(255, 255, 255, 0)'
+        ),
         barmode='group',
         bargap=0.15,  # gap between bars of adjacent location coordinates.
         bargroupgap=0.1  # gap between bars of the same location coordinate.
@@ -126,7 +197,16 @@ app = dash.Dash()
 fig = get_charts()
 
 app.layout = html.Div([
-    dcc.Graph(figure=fig)
+    dcc.Graph(id='graph',figure=fig),
+    html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'})
 ])
+
+
+@app.callback(
+    Output('textarea-example-output', 'children'),
+    [Input('graph', 'clickData')])
+def display_click_data(clickData):
+    return json.dumps(clickData, indent=2)
+
 
 app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter

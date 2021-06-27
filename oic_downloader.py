@@ -18,6 +18,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import simplejson as json
 import re
@@ -48,7 +49,9 @@ def store_data(p_df, p_load_dt):
     # import pdb; pdb.set_trace()
     p_df['load_dt'] = p_load_dt
     insert_qry = ' insert or replace into tsla_nasdaq (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
-    conn = create_connection(os.getcwd()+'/data_store.sqlite')
+    PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+    DB_PATH = os.path.join(PROJECT_ROOT, 'data_store.sqlite')
+    conn = create_connection(DB_PATH)
     conn.executemany(insert_qry, p_df.to_records(index=False))
     conn.commit()
 
@@ -88,33 +91,13 @@ def get_charts(current_price):
         df_expiry = expiry[1]
         df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
         # Call Open Interest
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,
-                                y=df_expiry.c_Openinterest.values,
-                                name='Call Open Interest_'+expirydt,
-                                marker_color='rgb(0,128,0)',
-                                opacity=.8
-                                ), row=i + 1, col=1)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Openinterest.values, name='Call Open Interest_'+expirydt, marker_color='rgb(0,128,0)',opacity=.8), row=i + 1, col=1)
         # Put Open Interest
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,
-                                y=df_expiry.p_Openinterest.values,
-                                name='Put Open Interest_'+expirydt,
-                                marker_color='rgb(225, 0, 0)',
-                                opacity=.8
-                                ), row=i + 1, col=1)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Openinterest.values,name='Put Open Interest_'+expirydt,marker_color='rgb(225, 0, 0)',opacity=.8), row=i + 1, col=1)
         #Call Volume
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,
-                                y=df_expiry.c_Volume.values,
-                                name='Call Volume_'+expirydt,
-                                marker_color='rgb(0,300,0)',
-                                opacity=.3
-                                ), row=i + 1, col=1)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Volume.values,name='Call Volume_'+expirydt,marker_color='rgb(0,300,0)',opacity=.3), row=i + 1, col=1)
         #Put Volume
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,
-                                y=df_expiry.p_Volume.values,
-                                name='Put Volume_'+expirydt,
-                                marker_color='rgb(300,0,0)',
-                                opacity=.3
-                                ), row=i + 1, col=1)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Volume.values,name='Put Volume_'+expirydt,marker_color='rgb(300,0,0)',opacity=.3), row=i + 1, col=1)
         # Current Price
         fig.append_trace(go.Scatter(
             x=[current_price],
@@ -144,9 +127,9 @@ def get_charts(current_price):
         # Put Price Change
         fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Change.values,name='Put Change_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
         # Call prices
-        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values,text=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Call price_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Call price_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
         # Put prices
-        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values,text=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Put price_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values, mode='lines',line_shape='spline',name='Put price_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
         # Current price
         fig.append_trace(go.Scatter(
             x=[current_price],
@@ -235,6 +218,7 @@ def get_charts(current_price):
             bgcolor='rgba(255, 255, 255, 0)',
             bordercolor='rgba(255, 255, 255, 0)'
         ),
+        hovermode='x',
         barmode='group',
         bargap=0.15,  # gap between bars of adjacent location coordinates.
         bargroupgap=0.1  # gap between bars of the same location coordinate.
@@ -245,11 +229,70 @@ def get_charts(current_price):
 app = dash.Dash()
 current_price = get_lastSalePrice()
 fig = get_charts(current_price)
+class OptionChart():
+    def __init__(self,name):
+        self.name=name
+        self.display_status=False
+        self.c_url, self.p_url = '',''
+    def set_symbol_name(self,name):
+        symname=name
+        ticker='@TSLA%20%20'
+        top_url = '''https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol='''+ticker
+        dt=pd.to_datetime(name['points'][0]['curveName'].split('_')[1]).strftime('%y%m%d')
+        strike=name['points'][0]['x']
+        strike_str='{:09.3F}'.format(strike).replace('.','')
+        c_name=dt+'C'+strike_str
+        p_name=dt+'P'+strike_str
+        rest_of_url='''&chscale=1m&chtype=AreaChart'''
+        c_url = c_name+rest_of_url
+        p_url = p_name + rest_of_url
+        self.c_url, self.p_url = top_url+c_url, top_url+p_url
+    def get_symbol_name(self):
+        return [self.c_url, self.p_url]
+
+oc = OptionChart(name=None)
+
 
 app.layout = html.Div([
-    dcc.Graph(id='graph',figure=fig),
-    html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'})
+    # dbc.Button("Open modal", id="open", n_clicks=0),
+    dbc.Modal(
+                [
+                    dbc.ModalBody([html.Img(src=oc.c_url, style={"width": "25%"}),
+                                  html.Img(src=oc.p_url, style={"width": "25%"})]),
+                    dbc.ModalFooter(
+                        dbc.Button(
+                            "Close", id="close", className="ml-auto", n_clicks=0
+                        ))
+
+                ],
+                id="modal",
+                is_open=oc.display_status,
+                size="sm",
+                backdrop=True,
+                fade=True,
+                centered=True
+                ),
+    dcc.Graph(id='graph', figure=fig),
+html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'}),
 ])
+# @app.callback(
+#     Output("modal", "is_open"),
+#     [Input("open", "n_clicks"), Input("close", "n_clicks")],
+#     [State("modal", "is_open")],
+# )
+# def toggle_modal(n1, n2, is_open):
+#     if n1 or n2:
+#         return not is_open
+#     return is_open
+
+# @app.callback(
+#     Output('modal', 'is_open'),
+#     [Input('graph', 'clickData')],
+#     [State('modal', 'is_open')])
+# def display_option_history(clickData,is_open):
+#     print(oc.p_url, oc.c_url)
+#     return not is_open
+
 
 
 @app.callback(
@@ -260,10 +303,11 @@ def display_click_data(clickData,figure):
      try:
         curveNum = clickData['points'][0]['curveNumber']
         clickData['points'][0]['curveName']= figure['data'][curveNum]['name']
+        oc.set_symbol_name(clickData)
      except:
         pass
 
      return json.dumps(clickData, indent=2)
 
 
-app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter
+app.run_server(debug=False, host='0.0.0.0')  # Turn off reloader if inside Jupyter

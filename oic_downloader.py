@@ -112,7 +112,7 @@ def get_charts(current_price):
             text=[str(current_price)],
             name="LastTradePrice_"+expirydt,
             mode="lines+markers+text",
-            opacity=0.5,
+            opacity=0.7,
             textfont=dict(
                 family="sans serif",
                 size=12,
@@ -144,7 +144,7 @@ def get_charts(current_price):
             text=[str(current_price)],
             name="LastTradePrice_"+expirydt,
             mode="lines+markers+text",
-            opacity=0.5,
+            opacity=0.7,
             textfont=dict(
                 family="sans serif",
                 size=12,

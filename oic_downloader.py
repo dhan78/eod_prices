@@ -96,14 +96,14 @@ def get_charts(current_price):
                                 y=df_expiry.c_Volume.values,
                                 name='Call Volume',
                                 marker_color='rgb(0,300,0)',
-                                opacity=.1
+                                opacity=.3
                                 ), row=i + 1, col=1)
         #Put Volume
         fig.append_trace(go.Bar(x=df_expiry.strike.values,
                                 y=df_expiry.p_Volume.values,
                                 name='Put Volume',
                                 marker_color='rgb(300,0,0)',
-                                opacity=.1
+                                opacity=.3
                                 ), row=i + 1, col=1)
         # Current Price
         fig.append_trace(go.Scatter(

@@ -22,6 +22,15 @@ from dash.dependencies import Input, Output, State
 import simplejson as json
 import re
 
+
+import dateutil.parser as dparse
+from datetime import timedelta
+
+next_friday = dparse.parse("Friday")
+one_week = timedelta(days=7)
+weekly_expiry_target = next_friday + one_week * 6
+
+
 headers = {
     'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'}
 
@@ -44,11 +53,12 @@ def store_data(p_df, p_load_dt):
     conn.commit()
 
 def oic_api_call():
-    url = 'https://api.nasdaq.com/api/quote/TSLA/option-chain?assetclass=stocks&limit=600&fromdate=2021-06-20&todate=2021-09-30&excode=oprac&callput=callput&money=at&type=all'
+    load_dt = datetime.today().strftime('%Y-%m-%d')
+    weekly_expiry_end=weekly_expiry_target.strftime('%Y-%m-%d')
+
+    url = f'https://api.nasdaq.com/api/quote/TSLA/option-chain?assetclass=stocks&limit=600&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
     response = requests.get(url, headers=headers)
     # rws = response.json()['data']['rows']
-
-    load_dt = datetime.today().strftime('%Y-%m-%d')
 
     df = df = pd.DataFrame.from_dict(response.json()['data']['table']['rows'])
     df['expirygroup'] = df['expirygroup'].apply(lambda x: pd.to_datetime(x))

@@ -18,7 +18,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import simplejson as json
 import re
 
@@ -74,34 +74,34 @@ def get_charts(current_price):
     fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03)
 
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-        expirydt = expiry[0]
+        expirydt = expiry[0].strftime('%B-%d-%Y')
         df_expiry = expiry[1]
         df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
         # Call Open Interest
         fig.append_trace(go.Bar(x=df_expiry.strike.values,
                                 y=df_expiry.c_Openinterest.values,
-                                name='Call Open Interest',
+                                name='Call Open Interest_'+expirydt,
                                 marker_color='rgb(0,128,0)',
                                 opacity=.8
                                 ), row=i + 1, col=1)
         # Put Open Interest
         fig.append_trace(go.Bar(x=df_expiry.strike.values,
                                 y=df_expiry.p_Openinterest.values,
-                                name='Put Open Interest',
+                                name='Put Open Interest_'+expirydt,
                                 marker_color='rgb(225, 0, 0)',
                                 opacity=.8
                                 ), row=i + 1, col=1)
         #Call Volume
         fig.append_trace(go.Bar(x=df_expiry.strike.values,
                                 y=df_expiry.c_Volume.values,
-                                name='Call Volume',
+                                name='Call Volume_'+expirydt,
                                 marker_color='rgb(0,300,0)',
                                 opacity=.3
                                 ), row=i + 1, col=1)
         #Put Volume
         fig.append_trace(go.Bar(x=df_expiry.strike.values,
                                 y=df_expiry.p_Volume.values,
-                                name='Put Volume',
+                                name='Put Volume_'+expirydt,
                                 marker_color='rgb(300,0,0)',
                                 opacity=.3
                                 ), row=i + 1, col=1)
@@ -110,7 +110,7 @@ def get_charts(current_price):
             x=[current_price],
             y=[5000],
             text=[str(current_price)],
-            name="LastTradePrice",
+            name="LastTradePrice_"+expirydt,
             mode="lines+markers+text",
             opacity=0.5,
             textfont=dict(
@@ -125,24 +125,24 @@ def get_charts(current_price):
         fig.update_yaxes(title_text=expiry[0].strftime('%B-%d-%Y'), range=[0, 12000], row=i + 1, col=1)
 
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-        expirydt = expiry[0]
+        expirydt = expiry[0].strftime('%B-%d-%Y')
         df_expiry = expiry[1]
         df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
         df_expiry.sort_values(by=['strike'],inplace=True)
         # Call price Change
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Change.values,name='Call Change',marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Change.values,name='Call Change_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
         # Put Price Change
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Change.values,name='Put Change',marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Change.values,name='Put Change_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
         # Call prices
-        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values,text=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Call price',marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values,text=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Call price_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
         # Put prices
-        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values,text=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Put price',marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values,text=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Put price_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
         # Current price
         fig.append_trace(go.Scatter(
             x=[current_price],
             y=[20],
             text=[str(current_price)],
-            name="LastTradePrice",
+            name="LastTradePrice_"+expirydt,
             mode="lines+markers+text",
             opacity=0.5,
             textfont=dict(
@@ -244,9 +244,16 @@ app.layout = html.Div([
 
 @app.callback(
     Output('textarea-example-output', 'children'),
-    [Input('graph', 'clickData')])
-def display_click_data(clickData):
-    return json.dumps(clickData, indent=2)
+    [Input('graph', 'clickData')],
+    [State('graph','figure')])
+def display_click_data(clickData,figure):
+     try:
+        curveNum = clickData['points'][0]['curveNumber']
+        clickData['points'][0]['curveName']= figure['data'][curveNum]['name']
+     except:
+        pass
+
+     return json.dumps(clickData, indent=2)
 
 
 app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter

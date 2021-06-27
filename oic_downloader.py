@@ -66,13 +66,12 @@ def get_lastSalePrice():
     return lastSalePrice
 
 
-def get_charts():
+def get_charts(current_price):
     df = oic_api_call()
-    current_price = get_lastSalePrice()
 
     num_or_charts = len(df.expirygroup.unique())
 
-    fig = make_subplots(rows=num_or_charts, cols=1, vertical_spacing=0.03)
+    fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03)
 
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
         expirydt = expiry[0]
@@ -121,18 +120,61 @@ def get_charts():
             )
         ), row=i + 1, col=1)
 
-    # for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-    #     expirydt = expiry[0]
-    #     df_expiry = expiry[1]
-    #     df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
-    #     # Call price Change
-    #     df_expiry['c_xy'] = df_expiry.strike.astype(str) + ',' + df_expiry.c_Last.astype(str)
-    #     df_expiry['c_axy'] = df_expiry.strike.astype(str) + ',' + (df_expiry.c_Last - df_expiry.c_Change).astype(str)
-    #     # Put price Change
-    #     df_expiry['p_xy'] = df_expiry.strike.astype(str) + ',' + df_expiry.p_Last.astype(str)
-    #     df_expiry['p_axy'] = df_expiry.strike.astype(str) + ',' + (df_expiry.p_Last - df_expiry.p_Change).astype(str)
-    #     df_expiry.set_index('strike',inplace=True)
-    #     for c_xy, c_axy in zip(df_expiry['c_xy'],df_expiry['c_axy']):
+    for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
+        fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-90)
+        fig.update_yaxes(title_text=expiry[0].strftime('%B-%d-%Y'), range=[0, 12000], row=i + 1, col=1)
+
+    for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
+        expirydt = expiry[0]
+        df_expiry = expiry[1]
+        df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
+        df_expiry.sort_values(by=['strike'],inplace=True)
+        # Call price Change
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Change.values,name='Call Change',marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
+        # Put Price Change
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Change.values,name='Put Change',marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
+        # Call prices
+        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values,text=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Call price',marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
+        # Put prices
+        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values,text=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Put price',marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
+        # Current price
+        fig.append_trace(go.Scatter(
+            x=[current_price],
+            y=[20],
+            text=[str(current_price)],
+            name="LastTradePrice",
+            mode="lines+markers+text",
+            opacity=0.5,
+            textfont=dict(
+                family="sans serif",
+                size=12,
+                color="blue"
+            )
+        ), row=i + 1, col=2)
+
+
+        # # Call price Change
+        # df_expiry['c_Prev']=df_expiry.c_Last-df_expiry.c_Change
+        # df_expiry['c_xy'] = df_expiry.strike.astype(str) + ',' + df_expiry.c_Last.astype(str)
+        # df_expiry['c_axy'] = df_expiry.strike.astype(str) + ',' + (df_expiry.c_Last - df_expiry.c_Change).astype(str)
+        # # Put price Change
+        # df_expiry['p_Prev'] = df_expiry.p_Last - df_expiry.p_Change
+        # df_expiry['p_xy'] = df_expiry.strike.astype(str) + ',' + df_expiry.p_Last.astype(str)
+        # df_expiry['p_axy'] = df_expiry.strike.astype(str) + ',' + (df_expiry.p_Last - df_expiry.p_Change).astype(str)
+    #
+    #     fig.add_trace(go.Scatter(x=df_expiry.strike, y=df_expiry.c_Prev, fill='tozeroy',  mode='none',name='C_previous'), row=i+1, col=2)
+    #     fig.add_trace(go.Scatter(x=df_expiry.strike, y=df_expiry.c_Last, fill='tonexty',  mode='none',name='C_current'), row=i+1, col=2)
+    #
+    #     fig.add_trace(go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Prev.values, fill='tozeroy', mode='none',name='P_previous'), row=i+1, col=2)
+    #     fig.add_trace(go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Last.values, fill='tonexty', mode='none',name='P_current'), row=i+1, col=2)
+    #
+    for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
+        fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-90)
+        fig.update_yaxes(title_text=expiry[0].strftime('%B-%d-%Y'), range=[-20, 60], row=i + 1, col=2)
+
+        # df_expiry.set_index('strike',inplace=True)
+        # for c_xy, c_axy in zip(df_expiry['c_xy'],df_expiry['c_axy']):
+        #     fig.add_trace(x=df_expiry.strike,y=df_expiry.c_Last,fill='tozeroy',mode='none')
     #         fig.add_annotation(
     #             x=c_xy.split(',')[0],  # arrows' head
     #             y=c_xy.split(',')[1],  # arrows' head
@@ -163,15 +205,12 @@ def get_charts():
         #                         ), row=i + 1, col=2)
 
 
-    for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-        fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-90)
-        fig.update_yaxes(title_text=expiry[0].strftime('%B-%d-%Y'), range=[100, 11000], row=i + 1, col=1)
-        # xaxis = dict(dtick=2.5, tickangle=-90),
+
 
     fig.update_layout(
         title='Put Call Open Interest',
         xaxis_tickfont_size=14,
-        height=1800, width=1500,
+        height=1800, width=1900,
         showlegend=False,
         # yaxis=dict(
         #     title='Open Interest',
@@ -194,7 +233,8 @@ def get_charts():
 
 
 app = dash.Dash()
-fig = get_charts()
+current_price = get_lastSalePrice()
+fig = get_charts(current_price)
 
 app.layout = html.Div([
     dcc.Graph(id='graph',figure=fig),

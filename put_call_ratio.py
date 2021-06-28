@@ -149,7 +149,7 @@ def print_p_c_ratio_yf(p_ticker):
               :10]  # YYYY-MM-DD format
     # tsla_oc = tsla.option_chain(p_date)
     df_p_c, weekly_fridays = [], []
-    for i in range(1,4):
+    for i in range(0,3):
         weekly_friday = weekly_expiry[i].strftime('%Y-%m-%d')
         tsla_oc = tsla.option_chain(weekly_friday)
         weekly_fridays.append(weekly_friday)

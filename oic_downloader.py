@@ -48,7 +48,7 @@ def create_connection(db_file):
 def store_data(p_df, p_load_dt):
     # import pdb; pdb.set_trace()
     p_df['load_dt'] = p_load_dt
-    insert_qry = ' insert or replace into tsla_nasdaq (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
+    insert_qry = ' insert or ignore into tsla_nasdaq (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
     DB_PATH = os.path.join(PROJECT_ROOT, 'data_store.sqlite')
     conn = create_connection(DB_PATH)
@@ -68,6 +68,7 @@ def oic_api_call():
     df['expirygroup'].ffill(axis=0, inplace=True)
     df.dropna(inplace=True)
     df['load_dt'] = datetime.today().strftime('%Y-%m-%d')
+    df['load_tm'] = datetime.today().strftime('%H:%M:%S')
     store_data(p_df=df, p_load_dt=load_dt)
     return df
 
@@ -84,7 +85,7 @@ def get_charts(current_price):
 
     num_or_charts = len(df.expirygroup.unique())
 
-    fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03)
+    fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, print_grid=True)
 
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
         expirydt = expiry[0].strftime('%B-%d-%Y')
@@ -122,14 +123,19 @@ def get_charts(current_price):
         df_expiry = expiry[1]
         df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
         df_expiry.sort_values(by=['strike'],inplace=True)
+        df_expiry['c_%']=df_expiry.c_Change*100/(df_expiry.c_Last-df_expiry.c_Change)
+        df_expiry['p_%'] = df_expiry.p_Change*100/ (df_expiry.p_Last - df_expiry.p_Change)
+        
         # Call price Change
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Change.values,name='Call Change_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
+        #fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Change.values,name='Call Change_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_%'].values, name='%C Change_' + expirydt, marker_color='rgb(0,150,0)', opacity=.5), row=i + 1, col=2)
         # Put Price Change
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Change.values,name='Put Change_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
+        # fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Change.values,name='Put Change_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_%'].values, name='%P Change_' + expirydt,marker_color='rgb(255,0,0)', opacity=.5), row=i + 1, col=2)
         # Call prices
-        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Call price_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
+        fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Call price_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
         # Put prices
-        fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values, mode='lines',line_shape='spline',name='Put price_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
+        fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values, mode='lines',line_shape='spline',name='Put price_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
         # Current price
         fig.append_trace(go.Scatter(
             x=[current_price],
@@ -163,7 +169,7 @@ def get_charts(current_price):
     #
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
         fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-90)
-        fig.update_yaxes(title_text=expiry[0].strftime('%B-%d-%Y'), range=[-20, 60], row=i + 1, col=2)
+        fig.update_yaxes(title_text=expiry[0].strftime('%B-%d-%Y'), range=[-50, 60], row=i + 1, col=2) #,ticksuffix="%")
 
         # df_expiry.set_index('strike',inplace=True)
         # for c_xy, c_axy in zip(df_expiry['c_xy'],df_expiry['c_axy']):
@@ -273,7 +279,12 @@ app.layout = html.Div([
                 centered=True
                 ),
     dcc.Graph(id='graph', figure=fig),
-html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'}),
+    dcc.Interval(
+        id='interval-component',
+        interval=300 * 1000,  # in milliseconds
+        n_intervals=0
+    ),
+    html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'}),
 ])
 # @app.callback(
 #     Output("modal", "is_open"),
@@ -293,7 +304,12 @@ html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'}),
 #     print(oc.p_url, oc.c_url)
 #     return not is_open
 
-
+@app.callback(Output('graph', 'figure'),
+              Input('interval-component', 'n_intervals'))
+def update_graph_live(n):
+    current_price = get_lastSalePrice()
+    print('updating graph')
+    return get_charts(current_price)
 
 @app.callback(
     Output('textarea-example-output', 'children'),

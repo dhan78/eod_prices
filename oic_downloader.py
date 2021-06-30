@@ -1,11 +1,12 @@
 import os
 from datetime import datetime
+import random
 
 import requests
 import pandas as pd
 import sqlite3
 from sqlite3 import Error
-
+import datetime as dt
 
 import plotly.graph_objects as go  # or plotly.express as px
 
@@ -32,9 +33,15 @@ one_week = timedelta(days=7)
 weekly_expiry_target = next_friday + one_week * 6
 
 
-headers = {
-    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'}
+def get_headers():
+    return {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.'+ str(random.random())+' Safari/537.36'}
 
+def isNowInTimePeriod(startTime, endTime, nowTime):
+    if startTime < endTime:
+        return nowTime >= startTime and nowTime <= endTime
+    else:
+        #Over midnight:
+        return nowTime >= startTime or nowTime <= endTime
 
 def create_connection(db_file):
     conn = None
@@ -60,7 +67,7 @@ def oic_api_call():
     weekly_expiry_end=weekly_expiry_target.strftime('%Y-%m-%d')
 
     url = f'https://api.nasdaq.com/api/quote/TSLA/option-chain?assetclass=stocks&limit=600&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=get_headers())
     # rws = response.json()['data']['rows']
 
     df = pd.DataFrame.from_dict(response.json()['data']['table']['rows'])
@@ -69,12 +76,15 @@ def oic_api_call():
     df.dropna(inplace=True)
     df['load_dt'] = datetime.today().strftime('%Y-%m-%d')
     df['load_tm'] = datetime.today().strftime('%H:%M:%S')
-    store_data(p_df=df, p_load_dt=load_dt)
+
+    if isNowInTimePeriod(dt.time(9, 30), dt.time(16, 00), dt.datetime.now().time()): #Save data only during market hours
+        store_data(p_df=df, p_load_dt=load_dt)
     return df
 
 def get_lastSalePrice():
     url = 'https://api.nasdaq.com/api/quote/TSLA/info?assetclass=stocks'
-    response = requests.get(url, headers=headers)
+    # url = 'https://api.nasdaq.com/api/quote/TSLA/realtime-trades?&limit=10&fromTime=00:00'
+    response = requests.get(url, headers=get_headers())
     lastSalePrice=response.json()['data']['primaryData']['lastSalePrice']
     float(re.findall("\d+\.\d+", lastSalePrice)[0])
     return lastSalePrice
@@ -92,9 +102,9 @@ def get_charts(current_price):
         df_expiry = expiry[1]
         df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
         # Call Open Interest
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Openinterest.values, name='Call Open Interest_'+expirydt, marker_color='rgb(0,128,0)',opacity=.8), row=i + 1, col=1)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Openinterest.values, name='Call Open Interest_'+expirydt, marker_color='rgb(0,128,0)',opacity=.8, width=.6), row=i + 1, col=1)
         # Put Open Interest
-        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Openinterest.values,name='Put Open Interest_'+expirydt,marker_color='rgb(225, 0, 0)',opacity=.8), row=i + 1, col=1)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Openinterest.values,name='Put Open Interest_'+expirydt,marker_color='rgb(225, 0, 0)',opacity=.8, width=.6), row=i + 1, col=1)
         #Call Volume
         fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Volume.values,name='Call Volume_'+expirydt,marker_color='rgb(0,300,0)',opacity=.3), row=i + 1, col=1)
         #Put Volume
@@ -128,10 +138,10 @@ def get_charts(current_price):
         
         # Call price Change
         #fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Change.values,name='Call Change_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
-        fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_%'].values, name='%C Change_' + expirydt, marker_color='rgb(0,150,0)', opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_%'].values, name='%C Change_' + expirydt, marker_color='rgb(0,150,0)', opacity=.5, width=.3), row=i + 1, col=2)
         # Put Price Change
         # fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Change.values,name='Put Change_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
-        fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_%'].values, name='%P Change_' + expirydt,marker_color='rgb(255,0,0)', opacity=.5), row=i + 1, col=2)
+        fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_%'].values, name='%P Change_' + expirydt,marker_color='rgb(255,0,0)', opacity=.5, width=.3), row=i + 1, col=2)
         # Call prices
         fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, mode='lines',line_shape='spline',name='Call price_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
         # Put prices
@@ -326,4 +336,4 @@ def display_click_data(clickData,figure):
      return json.dumps(clickData, indent=2)
 
 
-app.run_server(debug=False, host='0.0.0.0')  # Turn off reloader if inside Jupyter
+app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter

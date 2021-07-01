@@ -7,6 +7,9 @@ import pandas as pd
 import sqlite3
 from sqlite3 import Error
 import datetime as dt
+import yfinance as yf
+import numpy as np
+
 
 import plotly.graph_objects as go  # or plotly.express as px
 
@@ -23,6 +26,10 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import simplejson as json
 import re
+import requests_cache
+
+session = requests_cache.CachedSession('yfinance.cache')
+session.headers['User-agent'] = 'my-x1carbon/1.02' + str(random.random())
 
 
 import dateutil.parser as dparse
@@ -62,6 +69,78 @@ def store_data(p_df, p_load_dt):
     conn.executemany(insert_qry, p_df.to_records(index=False))
     conn.commit()
 
+def query_data(p_load_dt):
+    sql_str = ''' select *
+    from tsla_nasdaq where
+    load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)
+    and load_tm = (select max(load_tm)
+    from tsla_nasdaq where
+    load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)) '''
+
+    PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+    DB_PATH = os.path.join(PROJECT_ROOT, 'data_store.sqlite')
+    conn = create_connection(DB_PATH)
+    cur = conn.cursor()
+    cur.execute(sql_str)
+    ret_rows = cur.fetchall()
+    return ret_rows
+
+
+
+next_friday = dparse.parse("Friday")
+one_week = timedelta(days=7)
+weekly_expiry = [next_friday + one_week * i for i in range(6)]
+def reshape_options_for_chart(p_df, price, p_expiry):
+    # p_df = pd.concat([pd.DataFrame(p_df.calls), pd.DataFrame(p_df.puts)])
+    p_df.calls.columns = ['c_' + col for col in p_df.calls.columns]
+    p_df.puts.columns = ['p_' + col for col in p_df.puts.columns]
+    p_df = pd.concat([pd.DataFrame(p_df.calls).set_index('c_strike'), pd.DataFrame(p_df.puts).set_index('p_strike')], axis=1)
+    # p_df['put_call'] = p_df['c_contractSymbol'].apply(lambda x: x[10])
+    # p_df = p_df.groupby(['strike', 'put_call'])['openInterest','volume'].sum().unstack().dropna()
+    # p_df = p_df.groupby(['strike', 'put_call'])['openInterest'].sum().unstack().fillna(0.001)
+    p_df = p_df.replace(0., 0.001)
+    p_df = p_df[~p_df.isin([0., np.nan, np.inf, -np.inf]).any(1)]
+
+    # p_df['total'] = p_df.P + p_df.C
+    # p_df['p_c_ratio'] = p_df.p_volume / p_df.c_volume
+    # p_df['c_p_ratio'] = p_df.c_volume / p_df.p_volume
+    p_df.rename(
+        columns={'c_lastPrice': 'c_Last', 'p_lastPrice': 'p_Last',
+                 'c_change': 'c_Change', 'p_change': 'p_Change',
+                 'c_volume': 'c_Volume', 'p_volume': 'p_Volume',
+                'c_openInterest': 'c_Openinterest', 'p_openInterest': 'p_Openinterest'
+                 }
+        ,inplace=True)
+    p_df['expirygroup'] = p_expiry
+
+    p_df = p_df.rename_axis('strike').reset_index().sort_values(by='strike')
+    nearest_strikes = (p_df.strike < (price + 100)) & (p_df.strike > (price - 100))
+    p_df = p_df[nearest_strikes]
+
+    # p_df.index = range(len(p_df))
+    return p_df  # .copy()
+
+def print_p_c_ratio_yf(p_ticker):
+    tsla = yf.Ticker(p_ticker, session=session)
+    price = tsla.get_info()['regularMarketPrice']
+    price = tsla.history().tail(1)['Close'].values[0]
+    load_dt = str(yf.download(tickers='TSLA', period='1d', interval='1d').reset_index()['Date'].values[0])[
+              :10]  # YYYY-MM-DD format
+    # tsla_oc = tsla.option_chain(p_date)
+    df_p_c, weekly_fridays = [], []
+    for i in range(0,3):
+        weekly_friday = weekly_expiry[i].strftime('%Y-%m-%d')
+        tsla_oc = tsla.option_chain(weekly_friday)
+        weekly_fridays.append(weekly_friday)
+        df_p_c.append(reshape_options_for_chart(tsla_oc, price, weekly_friday))
+
+    return pd.concat(df_p_c)
+
+
+
+
+
+
 def oic_api_call():
     load_dt = datetime.today().strftime('%Y-%m-%d')
     weekly_expiry_end=weekly_expiry_target.strftime('%Y-%m-%d')
@@ -69,8 +148,12 @@ def oic_api_call():
     url = f'https://api.nasdaq.com/api/quote/TSLA/option-chain?assetclass=stocks&limit=600&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
     response = requests.get(url, headers=get_headers())
     # rws = response.json()['data']['rows']
+    if response.json()['data']:
+        df = pd.DataFrame.from_dict(response.json()['data']['table']['rows'])
+    else:
+        return print_p_c_ratio_yf('TSLA')
+        df = query_data(p_load_dt=load_dt)
 
-    df = pd.DataFrame.from_dict(response.json()['data']['table']['rows'])
     df['expirygroup'] = df['expirygroup'].apply(lambda x: pd.to_datetime(x))
     df['expirygroup'].ffill(axis=0, inplace=True)
     df.dropna(inplace=True)
@@ -89,16 +172,39 @@ def get_lastSalePrice():
     float(re.findall("\d+\.\d+", lastSalePrice)[0])
     return lastSalePrice
 
+class OptionChart():
+    def __init__(self,df, name):
+        self.df, self.name=df, name
+        self.display_status=False
+        self.c_url, self.p_url = '',''
+    def set_symbol_name(self,name):
+        symname=name
+        ticker='@TSLA%20%20'
+        top_url = '''https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol='''+ticker
+        dt=pd.to_datetime(name['points'][0]['curveName'].split('_')[1]).strftime('%y%m%d')
+        strike=name['points'][0]['x']
+        strike_str='{:09.3F}'.format(strike).replace('.','')
+        c_name=dt+'C'+strike_str
+        p_name=dt+'P'+strike_str
+        rest_of_url='''&chscale=1m&chtype=AreaChart'''
+        c_url = c_name+rest_of_url
+        p_url = p_name + rest_of_url
+        self.c_url, self.p_url = top_url+c_url, top_url+p_url
+    def get_symbol_name(self):
+        return [self.c_url, self.p_url]
 
 def get_charts(current_price):
     df = oic_api_call()
+    if df is None: return None
+
+    oc = OptionChart(df=df, name=None)
 
     num_or_charts = len(df.expirygroup.unique())
 
     fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, print_grid=True)
 
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-        expirydt = expiry[0].strftime('%B-%d-%Y')
+        expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0],str) else expiry[0]
         df_expiry = expiry[1]
         df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
         # Call Open Interest
@@ -126,10 +232,11 @@ def get_charts(current_price):
 
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
         fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-90)
-        fig.update_yaxes(title_text=expiry[0].strftime('%B-%d-%Y'), range=[0, 12000], row=i + 1, col=1)
+        title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
+        fig.update_yaxes(title_text=title_text, range=[0, 12000], row=i + 1, col=1)
 
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-        expirydt = expiry[0].strftime('%B-%d-%Y')
+        expirydt = expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
         df_expiry = expiry[1]
         df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
         df_expiry.sort_values(by=['strike'],inplace=True)
@@ -179,7 +286,8 @@ def get_charts(current_price):
     #
     for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
         fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-90)
-        fig.update_yaxes(title_text=expiry[0].strftime('%B-%d-%Y'), range=[-50, 60], row=i + 1, col=2) #,ticksuffix="%")
+        title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
+        fig.update_yaxes(title_text=title_text, range=[-50, 60], row=i + 1, col=2) #,ticksuffix="%")
 
         # df_expiry.set_index('strike',inplace=True)
         # for c_xy, c_axy in zip(df_expiry['c_xy'],df_expiry['c_axy']):
@@ -217,10 +325,11 @@ def get_charts(current_price):
 
 
     fig.update_layout(
-        title='Put Call Open Interest',
+        title=f"Put Call Open Interest. <b>{datetime.today().strftime('%I:%M %p')}...</b>",
         xaxis_tickfont_size=14,
         height=1800, width=1900,
         showlegend=False,
+        title_font_size= 14,
         # yaxis=dict(
         #     title='Open Interest',
         #     titlefont_size=16,
@@ -245,49 +354,28 @@ def get_charts(current_price):
 app = dash.Dash()
 current_price = get_lastSalePrice()
 fig = get_charts(current_price)
-class OptionChart():
-    def __init__(self,name):
-        self.name=name
-        self.display_status=False
-        self.c_url, self.p_url = '',''
-    def set_symbol_name(self,name):
-        symname=name
-        ticker='@TSLA%20%20'
-        top_url = '''https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol='''+ticker
-        dt=pd.to_datetime(name['points'][0]['curveName'].split('_')[1]).strftime('%y%m%d')
-        strike=name['points'][0]['x']
-        strike_str='{:09.3F}'.format(strike).replace('.','')
-        c_name=dt+'C'+strike_str
-        p_name=dt+'P'+strike_str
-        rest_of_url='''&chscale=1m&chtype=AreaChart'''
-        c_url = c_name+rest_of_url
-        p_url = p_name + rest_of_url
-        self.c_url, self.p_url = top_url+c_url, top_url+p_url
-    def get_symbol_name(self):
-        return [self.c_url, self.p_url]
-
-oc = OptionChart(name=None)
-
+figOption = None
 
 app.layout = html.Div([
     # dbc.Button("Open modal", id="open", n_clicks=0),
-    dbc.Modal(
-                [
-                    dbc.ModalBody([html.Img(src=oc.c_url, style={"width": "25%"}),
-                                  html.Img(src=oc.p_url, style={"width": "25%"})]),
-                    dbc.ModalFooter(
-                        dbc.Button(
-                            "Close", id="close", className="ml-auto", n_clicks=0
-                        ))
-
-                ],
-                id="modal",
-                is_open=oc.display_status,
-                size="sm",
-                backdrop=True,
-                fade=True,
-                centered=True
-                ),
+    # dbc.Modal(
+    #             [
+    #                 dbc.ModalBody([html.Img(src=oc.c_url, style={"width": "25%"}),
+    #                               html.Img(src=oc.p_url, style={"width": "25%"})]),
+    #                 dbc.ModalFooter(
+    #                     dbc.Button(
+    #                         "Close", id="close", className="ml-auto", n_clicks=0
+    #                     ))
+    #
+    #             ],
+    #             id="modal",
+    #             is_open=oc.display_status,
+    #             size="sm",
+    #             backdrop=True,
+    #             fade=True,
+    #             centered=True
+    #             ),
+    dcc.Graph(id='optionGraph', figure=figOption),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(
         id='interval-component',
@@ -329,7 +417,7 @@ def display_click_data(clickData,figure):
      try:
         curveNum = clickData['points'][0]['curveNumber']
         clickData['points'][0]['curveName']= figure['data'][curveNum]['name']
-        oc.set_symbol_name(clickData)
+        # oc.set_symbol_name(clickData)
      except:
         pass
 

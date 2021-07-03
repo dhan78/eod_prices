@@ -54,6 +54,9 @@ def isNowInTimePeriod(startTime, endTime, nowTime):
 class DB():
     def __init__(self,db_file):
         self.db_file=db_file
+        PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+        DB_PATH = os.path.join(PROJECT_ROOT, self.db_file)
+        self.conn = self.create_connection(DB_PATH)
 
     def create_connection(self,db_file):
         conn = None
@@ -67,11 +70,8 @@ class DB():
         # import pdb; pdb.set_trace()
         p_df['load_dt'] = p_load_dt
         insert_qry = ' insert or ignore into tsla_nasdaq (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
-        PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-        DB_PATH = os.path.join(PROJECT_ROOT, self.db_file)
-        conn = self.create_connection(DB_PATH)
-        conn.executemany(insert_qry, p_df.to_records(index=False))
-        conn.commit()
+        self.conn.executemany(insert_qry, p_df.to_records(index=False))
+        self.conn.commit()
 
     def query_data(self,p_load_dt):
         sql_str = ''' select *
@@ -81,10 +81,7 @@ class DB():
         from tsla_nasdaq where
         load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)) '''
 
-        PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-        DB_PATH = os.path.join(PROJECT_ROOT, self.db_file)
-        conn = self.create_connection(DB_PATH)
-        cur = conn.cursor()
+        cur = self.conn.cursor()
         cur.execute(sql_str)
         ret_rows = cur.fetchall()
         return ret_rows

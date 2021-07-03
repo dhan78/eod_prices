@@ -233,10 +233,10 @@ class Ticker():
             # Current Price
             fig.append_trace(go.Scatter(
                 x=[self.lastSalePrice],
-                y=[5000],
+                y=[6000],
                 text=[str(self.lastSalePrice)],
                 name="LastTradePrice_"+expirydt,
-                mode="lines+markers+text",
+                mode="text",
                 opacity=0.7,
                 textfont=dict(
                     family="sans serif",
@@ -261,26 +261,26 @@ class Ticker():
             df_expiry['p_1'] = df_expiry.p_Last - df_expiry.p_Change
 
             # Call price Change
-            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_%'].values, name='%C ' + expirydt, marker_color='rgb(0,150,0)', opacity=.3, width=.3), row=i + 1, col=2)
+            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_%'].values, hovertemplate='%{y:.2f}%', name='C ' + expirydt, marker_color='rgb(0,150,0)', opacity=.3, width=.3), row=i + 1, col=2)
             # Put Price Change
-            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_%'].values, name='%P ' + expirydt,marker_color='rgb(255,0,0)', opacity=.3, width=.3), row=i + 1, col=2)
+            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_%'].values, hovertemplate='%{y:.2f}%', name='P ' + expirydt, marker_color='rgb(255,0,0)', opacity=.3, width=.3), row=i + 1, col=2)
             # Call prices
             fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, name='C '+expirydt, mode='lines',line_shape='spline',marker_color='rgb(0,128,0)',opacity=.8), row=i + 1, col=2)
             # Put prices
-            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values,name='P '+expirydt, mode='lines',line_shape='spline', marker_color='rgb(225,0,0)',opacity=.8), row=i + 1, col=2)
+            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values, name='P '+expirydt, mode='lines',line_shape='spline', marker_color='rgb(225,0,0)',opacity=.8), row=i + 1, col=2)
             # Call prices (t-1)
-            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_1.values, name='C-1 ' + expirydt, mode ='lines',line_shape='spline',marker_color='rgb(0, 300, 0)',opacity=.2), row=i + 1, col=2)
+            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_1.values,  name='C-1 ' + expirydt, mode ='lines',line_shape='spline',marker_color='rgb(6, 171, 39)',opacity=.8, line=dict(color='rgb(0,128,0)', width=1, dash='dot')), row=i + 1, col=2)
             # Put prices (t-1)
-            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_1.values, name='P-1 ' + expirydt, mode='lines',line_shape='spline',marker_color='rgb(350,0,0)',opacity=.2), row=i + 1, col=2)
+            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_1.values,  name='P-1 ' + expirydt, mode='lines',line_shape='spline',marker_color='rgb(350,0,0)',opacity=.8,line=dict(color='rgb(255,0,0)', width=1, dash='dot')), row=i + 1, col=2)
 
 
             # Current price
             fig.append_trace(go.Scatter(
                 x=[self.lastSalePrice],
-                y=[20],
+                y=[50],
                 text=[str(self.lastSalePrice)],
                 name="LastTradePrice_"+expirydt,
-                mode="lines+markers+text",
+                mode="text",
                 opacity=0.7,
                 textfont=dict(
                     family="sans serif",
@@ -321,7 +321,7 @@ class Ticker():
             barmode='group',
             bargap=0.15,  # gap between bars of adjacent location coordinates.
             bargroupgap=0.1,  # gap between bars of the same location coordinate.
-            # plot_bgcolor = 'rgb(34,27,69)',  # set the background colour
+            # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour
         )
         return fig
 
@@ -400,4 +400,4 @@ def display_click_data(clickData,figure):
      return json.dumps(clickData, indent=2)
 
 
-app.run_server(debug=False, host='0.0.0.0')  # Turn off reloader if inside Jupyter
+app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter

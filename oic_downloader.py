@@ -292,57 +292,10 @@ class Ticker():
             ), row=i + 1, col=2)
 
 
-            # # Call price Change
-            # df_expiry['c_Prev']=df_expiry.c_Last-df_expiry.c_Change
-            # df_expiry['c_xy'] = df_expiry.strike.astype(str) + ',' + df_expiry.c_Last.astype(str)
-            # df_expiry['c_axy'] = df_expiry.strike.astype(str) + ',' + (df_expiry.c_Last - df_expiry.c_Change).astype(str)
-            # # Put price Change
-            # df_expiry['p_Prev'] = df_expiry.p_Last - df_expiry.p_Change
-            # df_expiry['p_xy'] = df_expiry.strike.astype(str) + ',' + df_expiry.p_Last.astype(str)
-            # df_expiry['p_axy'] = df_expiry.strike.astype(str) + ',' + (df_expiry.p_Last - df_expiry.p_Change).astype(str)
-        #
-        #     fig.add_trace(go.Scatter(x=df_expiry.strike, y=df_expiry.c_Prev, fill='tozeroy',  mode='none',name='C_previous'), row=i+1, col=2)
-        #     fig.add_trace(go.Scatter(x=df_expiry.strike, y=df_expiry.c_Last, fill='tonexty',  mode='none',name='C_current'), row=i+1, col=2)
-        #
-        #     fig.add_trace(go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Prev.values, fill='tozeroy', mode='none',name='P_previous'), row=i+1, col=2)
-        #     fig.add_trace(go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Last.values, fill='tonexty', mode='none',name='P_current'), row=i+1, col=2)
-        #
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-90)
             title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[-50, 60], row=i + 1, col=2) #,ticksuffix="%")
-
-            # df_expiry.set_index('strike',inplace=True)
-            # for c_xy, c_axy in zip(df_expiry['c_xy'],df_expiry['c_axy']):
-            #     fig.add_trace(x=df_expiry.strike,y=df_expiry.c_Last,fill='tozeroy',mode='none')
-        #         fig.add_annotation(
-        #             x=c_xy.split(',')[0],  # arrows' head
-        #             y=c_xy.split(',')[1],  # arrows' head
-        #             ax=c_axy.split(',')[0],  # arrows' tail
-        #             ay=c_axy.split(',')[1],  # arrows' tail
-        #             xref='x2',
-        #             yref='y2',
-        #             # axref='x',
-        #             # ayref='y',
-        #             text='',  # if you want only the arrow
-        #             showarrow=True,
-        #             arrowhead=3,
-        #             arrowsize=1,
-        #             arrowwidth=1,
-        #             arrowcolor='black'
-        #         )
-
-            # fig.append_trace(go.Bar(x=df_expiry.strike.values,
-            #                         y=df_expiry.c_Change.values,
-            #                         name='Call price Change',
-            #                         marker_color='rgb(0,128,0)'
-            #                         ), row=i + 1, col=2)
-            # # Put price Change
-            # fig.append_trace(go.Bar(x=df_expiry.strike.values,
-            #                         y=df_expiry.p_Change.values,
-            #                         name='Put price Change',
-            #                         marker_color='rgb(200, 0, 0)'
-            #                         ), row=i + 1, col=2)
 
 
 

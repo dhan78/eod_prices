@@ -261,19 +261,17 @@ class Ticker():
             df_expiry['p_1'] = df_expiry.p_Last - df_expiry.p_Change
 
             # Call price Change
-            #fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Change.values,name='Call Change_'+expirydt,marker_color='rgb(0,150,0)',opacity=.5), row=i + 1, col=2)
             fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_%'].values, name='%C ' + expirydt, marker_color='rgb(0,150,0)', opacity=.3, width=.3), row=i + 1, col=2)
             # Put Price Change
-            # fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Change.values,name='Put Change_'+expirydt,marker_color='rgb(255,0,0)',opacity=.5), row=i + 1, col=2)
             fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_%'].values, name='%P ' + expirydt,marker_color='rgb(255,0,0)', opacity=.3, width=.3), row=i + 1, col=2)
             # Call prices
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, name='C '+expirydt, mode='lines',line_shape='spline',marker_color='rgb(0,128,0)',opacity=.8), row=i + 1, col=2)
+            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, name='C '+expirydt, mode='lines',line_shape='spline',marker_color='rgb(0,128,0)',opacity=.8), row=i + 1, col=2)
             # Put prices
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values,name='P '+expirydt, mode='lines',line_shape='spline', marker_color='rgb(225,0,0)',opacity=.8), row=i + 1, col=2)
+            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values,name='P '+expirydt, mode='lines',line_shape='spline', marker_color='rgb(225,0,0)',opacity=.8), row=i + 1, col=2)
             # Call prices (t-1)
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_1.values, name='C-1 ' + expirydt, mode ='lines',line_shape='spline',marker_color='rgb(0, 300, 0)',opacity=.2), row=i + 1, col=2)
+            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_1.values, name='C-1 ' + expirydt, mode ='lines',line_shape='spline',marker_color='rgb(0, 300, 0)',opacity=.2), row=i + 1, col=2)
             # Put prices (t-1)
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_1.values, name='P-1 ' + expirydt, mode='lines',line_shape='spline',marker_color='rgb(350,0,0)',opacity=.2), row=i + 1, col=2)
+            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_1.values, name='P-1 ' + expirydt, mode='lines',line_shape='spline',marker_color='rgb(350,0,0)',opacity=.2), row=i + 1, col=2)
 
 
             # Current price

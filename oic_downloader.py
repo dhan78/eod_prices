@@ -28,8 +28,10 @@ import simplejson as json
 import re
 import requests_cache
 
-session = requests_cache.CachedSession('yfinance.cache')
-session.headers['User-agent'] = 'my-x1carbon/1.02' + str(random.random())
+def get_yahoo_session():
+    session = requests_cache.CachedSession('yfinance.cache')
+    session.headers['User-agent'] = 'my-x1carbon/1.02' + str(random.random())
+    return session
 
 
 import dateutil.parser as dparse
@@ -49,92 +51,100 @@ def isNowInTimePeriod(startTime, endTime, nowTime):
     else:
         #Over midnight:
         return nowTime >= startTime or nowTime <= endTime
+class DB():
+    def __init__(self,db_file):
+        self.db_file=db_file
 
-def create_connection(db_file):
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-    except Error as e:
-        print(e)
+    def create_connection(self,db_file):
+        conn = None
+        try:
+            conn = sqlite3.connect(db_file)
+        except Error as e:
+            print(e)
+        return conn
 
-    return conn
+    def store_data(self,p_df, p_load_dt):
+        # import pdb; pdb.set_trace()
+        p_df['load_dt'] = p_load_dt
+        insert_qry = ' insert or ignore into tsla_nasdaq (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
+        PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+        DB_PATH = os.path.join(PROJECT_ROOT, self.db_file)
+        conn = self.create_connection(DB_PATH)
+        conn.executemany(insert_qry, p_df.to_records(index=False))
+        conn.commit()
 
-def store_data(p_df, p_load_dt):
-    # import pdb; pdb.set_trace()
-    p_df['load_dt'] = p_load_dt
-    insert_qry = ' insert or ignore into tsla_nasdaq (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
-    PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-    DB_PATH = os.path.join(PROJECT_ROOT, 'data_store.sqlite')
-    conn = create_connection(DB_PATH)
-    conn.executemany(insert_qry, p_df.to_records(index=False))
-    conn.commit()
+    def query_data(self,p_load_dt):
+        sql_str = ''' select *
+        from tsla_nasdaq where
+        load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)
+        and load_tm = (select max(load_tm)
+        from tsla_nasdaq where
+        load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)) '''
 
-def query_data(p_load_dt):
-    sql_str = ''' select *
-    from tsla_nasdaq where
-    load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)
-    and load_tm = (select max(load_tm)
-    from tsla_nasdaq where
-    load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)) '''
-
-    PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-    DB_PATH = os.path.join(PROJECT_ROOT, 'data_store.sqlite')
-    conn = create_connection(DB_PATH)
-    cur = conn.cursor()
-    cur.execute(sql_str)
-    ret_rows = cur.fetchall()
-    return ret_rows
-
+        PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+        DB_PATH = os.path.join(PROJECT_ROOT, self.db_file)
+        conn = self.create_connection(DB_PATH)
+        cur = conn.cursor()
+        cur.execute(sql_str)
+        ret_rows = cur.fetchall()
+        return ret_rows
 
 
-next_friday = dparse.parse("Friday")
-one_week = timedelta(days=7)
-weekly_expiry = [next_friday + one_week * i for i in range(6)]
-def reshape_options_for_chart(p_df, price, p_expiry):
-    # p_df = pd.concat([pd.DataFrame(p_df.calls), pd.DataFrame(p_df.puts)])
-    p_df.calls.columns = ['c_' + col for col in p_df.calls.columns]
-    p_df.puts.columns = ['p_' + col for col in p_df.puts.columns]
-    p_df = pd.concat([pd.DataFrame(p_df.calls).set_index('c_strike'), pd.DataFrame(p_df.puts).set_index('p_strike')], axis=1)
-    # p_df['put_call'] = p_df['c_contractSymbol'].apply(lambda x: x[10])
-    # p_df = p_df.groupby(['strike', 'put_call'])['openInterest','volume'].sum().unstack().dropna()
-    # p_df = p_df.groupby(['strike', 'put_call'])['openInterest'].sum().unstack().fillna(0.001)
-    p_df = p_df.replace(0., 0.001)
-    p_df = p_df[~p_df.isin([0., np.nan, np.inf, -np.inf]).any(1)]
 
-    # p_df['total'] = p_df.P + p_df.C
-    # p_df['p_c_ratio'] = p_df.p_volume / p_df.c_volume
-    # p_df['c_p_ratio'] = p_df.c_volume / p_df.p_volume
-    p_df.rename(
-        columns={'c_lastPrice': 'c_Last', 'p_lastPrice': 'p_Last',
-                 'c_change': 'c_Change', 'p_change': 'p_Change',
-                 'c_volume': 'c_Volume', 'p_volume': 'p_Volume',
-                'c_openInterest': 'c_Openinterest', 'p_openInterest': 'p_Openinterest'
-                 }
-        ,inplace=True)
-    p_df['expirygroup'] = p_expiry
+class YahooFinance():
+    def __init__(self,ticker,num_of_weeks):
+        self.ticker,self.num_of_weeks = ticker,num_of_weeks
+        self.next_friday = dparse.parse("Friday")
+        self.one_week = timedelta(days=7)
+        self.weekly_expiry = [next_friday + one_week * i for i in range(num_of_weeks)]
 
-    p_df = p_df.rename_axis('strike').reset_index().sort_values(by='strike')
-    nearest_strikes = (p_df.strike < (price + 100)) & (p_df.strike > (price - 100))
-    p_df = p_df[nearest_strikes]
+    def reshape_options_for_chart(self,p_df, price, p_expiry):
+        # p_df = pd.concat([pd.DataFrame(p_df.calls), pd.DataFrame(p_df.puts)])
+        p_df.calls.columns = ['c_' + col for col in p_df.calls.columns]
+        p_df.puts.columns = ['p_' + col for col in p_df.puts.columns]
+        p_df = pd.concat([pd.DataFrame(p_df.calls).set_index('c_strike'), pd.DataFrame(p_df.puts).set_index('p_strike')], axis=1)
+        # p_df['put_call'] = p_df['c_contractSymbol'].apply(lambda x: x[10])
+        # p_df = p_df.groupby(['strike', 'put_call'])['openInterest','volume'].sum().unstack().dropna()
+        # p_df = p_df.groupby(['strike', 'put_call'])['openInterest'].sum().unstack().fillna(0.001)
+        p_df = p_df.replace(0., 0.001)
+        p_df = p_df.apply(pd.to_numeric, errors='coerce')
+        # p_df = p_df[~p_df.isin([0., np.nan, np.inf, -np.inf]).any(1)]
 
-    # p_df.index = range(len(p_df))
-    return p_df  # .copy()
 
-def print_p_c_ratio_yf(p_ticker):
-    tsla = yf.Ticker(p_ticker, session=session)
-    price = tsla.get_info()['regularMarketPrice']
-    price = tsla.history().tail(1)['Close'].values[0]
-    load_dt = str(yf.download(tickers='TSLA', period='1d', interval='1d').reset_index()['Date'].values[0])[
-              :10]  # YYYY-MM-DD format
-    # tsla_oc = tsla.option_chain(p_date)
-    df_p_c, weekly_fridays = [], []
-    for i in range(0,3):
-        weekly_friday = weekly_expiry[i].strftime('%Y-%m-%d')
-        tsla_oc = tsla.option_chain(weekly_friday)
-        weekly_fridays.append(weekly_friday)
-        df_p_c.append(reshape_options_for_chart(tsla_oc, price, weekly_friday))
+        # p_df['total'] = p_df.P + p_df.C
+        # p_df['p_c_ratio'] = p_df.p_volume / p_df.c_volume
+        # p_df['c_p_ratio'] = p_df.c_volume / p_df.p_volume
+        p_df.rename(
+            columns={'c_lastPrice': 'c_Last', 'p_lastPrice': 'p_Last',
+                     'c_change': 'c_Change', 'p_change': 'p_Change',
+                     'c_volume': 'c_Volume', 'p_volume': 'p_Volume',
+                    'c_openInterest': 'c_Openinterest', 'p_openInterest': 'p_Openinterest'
+                     }
+            ,inplace=True)
+        p_df['expirygroup'] = p_expiry
 
-    return pd.concat(df_p_c)
+        p_df = p_df.rename_axis('strike').reset_index().sort_values(by='strike')
+        nearest_strikes = (p_df.strike < (price + 75)) & (p_df.strike > (price - 75))
+        p_df = p_df[nearest_strikes]
+
+        # p_df.index = range(len(p_df))
+        return p_df  # .copy()
+
+    def print_p_c_ratio_yf(self,p_ticker):
+        tsla = yf.Ticker(self.ticker, session=get_yahoo_session())
+        price = tsla.get_info()['regularMarketPrice']
+        price = tsla.history().tail(1)['Close'].values[0]
+        load_dt = str(yf.download(tickers='TSLA', period='1d', interval='1d').reset_index()['Date'].values[0])[
+                  :10]  # YYYY-MM-DD format
+        # tsla_oc = tsla.option_chain(p_date)
+        df_p_c, weekly_fridays = [], []
+        for i in range(0,self.num_of_weeks):
+            weekly_friday = self.weekly_expiry[i].strftime('%Y-%m-%d')
+            tsla_oc = tsla.option_chain(weekly_friday)
+            weekly_fridays.append(weekly_friday)
+            df_p_c.append(self.reshape_options_for_chart(tsla_oc, price, weekly_friday))
+
+        return pd.concat(df_p_c)
 
 
 
@@ -166,6 +176,7 @@ class Ticker():
         self.lastSalePrice = self.get_lastSalePrice()
         self.marketStatus = None
         self.lastDataStoreTime = None
+        self.dataSource = None
 
     def get_lastSalePrice(self):
         url = f'https://api.nasdaq.com/api/quote/{self.ticker}/info?assetclass=stocks'
@@ -187,9 +198,12 @@ class Ticker():
         # rws = response.json()['data']['rows']
         if response.json()['data']:
             df = pd.DataFrame.from_dict(response.json()['data']['table']['rows'])
+            self.dataSource = 'Nasdaq'
         else:
-            return print_p_c_ratio_yf(self.ticker)
-            df = query_data(p_load_dt=load_dt)
+            yf1 = YahooFinance(ticker=self.ticker,num_of_weeks=5)
+            self.dataSource = 'Yahoo'
+            return yf1.print_p_c_ratio_yf(self.ticker)
+
 
         df['expirygroup'] = df['expirygroup'].apply(lambda x: pd.to_datetime(x))
         df['expirygroup'].ffill(axis=0, inplace=True)
@@ -200,7 +214,7 @@ class Ticker():
         if self.marketStatus !='Market Closed' and isNowInTimePeriod(dt.time(9, 30), dt.time(16, 00),
                              dt.datetime.now().time()):  # Save data only during market hours
             try:
-                if (datetime.today()-self.lastDataStoreTime)/60 > 5: store_data(p_df=df, p_load_dt=load_dt)
+                if (datetime.today()-self.lastDataStoreTime)/60 > 5: db.store_data(p_df=df, p_load_dt=load_dt)
                 self.lastDataStoreTime = datetime.today()
             except :
                 pass
@@ -299,7 +313,7 @@ class Ticker():
 
 
         fig.update_layout(
-            title=f"Put Call Open Interest. asof <b>{datetime.today().strftime('%I:%M %p')}... {self.marketStatus}</b>",
+            title=f"Put Call Open Interest. [{self.dataSource}] @ <b>{datetime.today().strftime('%I:%M %p')}... {self.marketStatus}</b>",
             xaxis_tickfont_size=14,
             height=1800, width=1900,
             showlegend=False,
@@ -326,7 +340,9 @@ class Ticker():
         return fig
 
 
+# app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 app = dash.Dash()
+db=DB(db_file='data_store.sqlite')
 tickr = Ticker('TSLA')
 # current_price = tickr.get_lastSalePrice()
 fig = tickr.get_charts()

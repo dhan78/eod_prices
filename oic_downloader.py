@@ -268,7 +268,7 @@ class Ticker():
             fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-90)
             title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, 12000], row=i + 1, col=1,secondary_y=False)
-            fig.update_yaxes(title_text=title_text, range=[0, 10], row=i + 1, col=1,secondary_y=True)
+            fig.update_yaxes(range=[0, 10], row=i + 1, col=1,secondary_y=True)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             expirydt = expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')

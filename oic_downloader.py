@@ -233,6 +233,8 @@ class Ticker():
             expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0],str) else expiry[0]
             df_expiry = expiry[1]
             df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
+            df_expiry['c_p_ratio'] = df_expiry.c_Volume / df_expiry.p_Volume
+            df_expiry['p_c_ratio'] = df_expiry.p_Volume/df_expiry.c_Volume
             # Call Open Interest
             fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Openinterest.values, name='Call Open Interest_'+expirydt, marker_color='rgb(0,128,0)',opacity=.8, width=.6), row=i + 1, col=1)
             # Put Open Interest
@@ -241,6 +243,12 @@ class Ticker():
             fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Volume.values,name='Call Volume_'+expirydt,marker_color='rgb(0,300,0)',opacity=.4, width=.3), row=i + 1, col=1)
             #Put Volume
             fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Volume.values,name='Put Volume_'+expirydt,marker_color='rgb(300,0,0)',opacity=.4, width=.3), row=i + 1, col=1)
+            # #Call/Put Ratio
+            # fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_p_ratio.values,name='c_P_Ratio'+expirydt,mode='lines',line_shape='spline',marker_color='rgb(0,300,0)',opacity=.4), row=i + 1, col=1)
+            # #Put/Call Ratio
+            # fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_c_ratio.values,name='p_c_Ratio'+expirydt,mode='lines',line_shape='spline',marker_color='rgb(300,0,0)',opacity=.4), row=i + 1, col=1)
+
+
             # Current Price
             fig.append_trace(go.Scatter(
                 x=[self.lastSalePrice],
@@ -250,7 +258,6 @@ class Ticker():
                 mode="text",
                 opacity=0.7,
                 textfont=dict(
-                    family="sans serif",
                     size=12,
                     color="blue"
                 )
@@ -271,10 +278,10 @@ class Ticker():
             df_expiry['c_1']=df_expiry.c_Last-df_expiry.c_Change
             df_expiry['p_1'] = df_expiry.p_Last - df_expiry.p_Change
 
-            # Call price Change
-            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_%'].values, hovertemplate='%{y:.2f}%', name='C ' + expirydt, marker_color='rgb(0,150,0)', opacity=.3, width=.3), row=i + 1, col=2)
-            # Put Price Change
-            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_%'].values, hovertemplate='%{y:.2f}%', name='P ' + expirydt, marker_color='rgb(255,0,0)', opacity=.3, width=.3), row=i + 1, col=2)
+            # Call price Change (Theta decay)
+            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_Change'].values, hovertemplate='%{y:.2f}', name='C Decay' + expirydt, marker_color='rgb(0,150,0)', opacity=.3, width=.3), row=i + 1, col=2)
+            # Put Price Change (Theta decay)
+            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_Change'].values, hovertemplate='%{y:.2f}', name='P Decay' + expirydt, marker_color='rgb(255,0,0)', opacity=.3, width=.3), row=i + 1, col=2)
             # Call prices
             fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, name='C '+expirydt, mode='lines',line_shape='spline',marker_color='rgb(0,128,0)',opacity=.8), row=i + 1, col=2)
             # Put prices
@@ -288,13 +295,12 @@ class Ticker():
             # Current price
             fig.append_trace(go.Scatter(
                 x=[self.lastSalePrice],
-                y=[50],
+                y=[50-i*5],
                 text=[str(self.lastSalePrice)],
                 name="LastTradePrice_"+expirydt,
                 mode="text",
                 opacity=0.7,
                 textfont=dict(
-                    family="sans serif",
                     size=12,
                     color="blue"
                 )
@@ -304,7 +310,7 @@ class Ticker():
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-90)
             title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
-            fig.update_yaxes(title_text=title_text, range=[-50, 60], row=i + 1, col=2) #,ticksuffix="%")
+            fig.update_yaxes(title_text=title_text, range=[-15, 60], row=i + 1, col=2) #,ticksuffix="%")
 
 
 

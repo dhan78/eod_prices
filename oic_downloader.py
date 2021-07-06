@@ -241,8 +241,8 @@ class Ticker():
             df_expiry = expiry[1]
             df_expiry.sort_values(by=['strike'], inplace=True)
             df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
-            df_expiry['c_p_ratio'] = df_expiry.c_Volume / df_expiry.p_Volume
-            df_expiry['p_c_ratio'] = df_expiry.p_Volume/df_expiry.c_Volume
+            df_expiry['c_p_ratio'] = df_expiry.c_Openinterest/df_expiry.p_Openinterest
+            df_expiry['p_c_ratio'] = df_expiry.p_Openinterest/df_expiry.c_Openinterest
             # Call Open Interest
             fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Openinterest.values, name='Call Open Interest_'+expirydt, marker_color='rgb(0,128,0)',opacity=.8, width=.6), row=i + 1, col=1)
             # Put Open Interest

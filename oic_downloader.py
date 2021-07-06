@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 import random
 
@@ -55,33 +56,36 @@ class DB():
     def __init__(self,db_file):
         self.db_file=db_file
         PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-        DB_PATH = os.path.join(PROJECT_ROOT, self.db_file)
-        self.conn = self.create_connection(DB_PATH)
+        self.DB_PATH = os.path.join(PROJECT_ROOT, self.db_file)
+        # self.conn = self.create_connection(DB_PATH)
 
-    def create_connection(self,db_file):
+    def create_connection(self):
         conn = None
         try:
-            conn = sqlite3.connect(db_file)
+            conn = sqlite3.connect(self.DB_PATH)
         except Error as e:
             print(e)
         return conn
 
     def store_data(self,p_df, p_load_dt):
         # import pdb; pdb.set_trace()
-        p_df['load_dt'] = p_load_dt
-        insert_qry = ' insert or ignore into tsla_nasdaq (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
-        self.conn.executemany(insert_qry, p_df.to_records(index=False))
-        self.conn.commit()
+
+        try:
+            conn = self.create_connection()
+            p_df['load_dt'] = p_load_dt
+            insert_qry = ' insert or ignore into tsla_nasdaq (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
+            conn.executemany(insert_qry, p_df.to_records(index=False))
+            conn.commit()
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
 
     def query_data(self,p_load_dt):
+        # get last row from previous working day
         sql_str = ''' select *
         from tsla_nasdaq where
-        load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)
-        and load_tm = (select max(load_tm)
-        from tsla_nasdaq where
-        load_dt = (select load_dt from tsla_nasdaq order by load_dt desc limit 1)) '''
-
-        cur = self.conn.cursor()
+        (load_dt,load_tm) = (select load_dt , load_tm from tsla_nasdaq order by load_dt desc , load_tm desc limit 1) '''
+        conn=self.create_connection()
+        cur = conn.cursor()
         cur.execute(sql_str)
         ret_rows = cur.fetchall()
         return ret_rows
@@ -186,6 +190,8 @@ class Ticker():
         self.lastSalePrice = lastSalePrice
         return lastSalePrice
 
+# prev_bus_day_closing price: https://api.nasdaq.com/api/quote/TSLA/historical?assetclass=stocks&fromdate=2021-06-06&limit=1&todate=2021-07-06
+
     def oic_api_call(self):
         load_dt = datetime.today().strftime('%Y-%m-%d')
         weekly_expiry_end = weekly_expiry_target.strftime('%Y-%m-%d')
@@ -208,18 +214,19 @@ class Ticker():
         df['load_dt'] = datetime.today().strftime('%Y-%m-%d')
         df['load_tm'] = datetime.today().strftime('%H:%M:%S')
 
-        if self.marketStatus !='Market Closed' and isNowInTimePeriod(dt.time(9, 30), dt.time(16, 00),
-                             dt.datetime.now().time()):  # Save data only during market hours
+        if self.marketStatus =='Market Open':  # Save data only during market hours
             try:
-                if (datetime.today()-self.lastDataStoreTime)/60 > 5: db.store_data(p_df=df, p_load_dt=load_dt)
-                self.lastDataStoreTime = datetime.today()
+                if (datetime.today()-self.lastDataStoreTime).seconds/60 > 5:
+                    db.store_data(p_df=df, p_load_dt=load_dt)
+                    print('Saved data to file')
+                    self.lastDataStoreTime = datetime.today()
             except :
-                pass
+                self.lastDataStoreTime = datetime.today()
         return df
 
     def get_charts(self):
-        df = self.oic_api_call()
         _ = self.get_lastSalePrice()
+        df = self.oic_api_call()
 
         if df is None: return None
 

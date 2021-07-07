@@ -41,6 +41,9 @@ from datetime import timedelta
 next_friday = dparse.parse("Friday")
 one_week = timedelta(days=7)
 weekly_expiry_target = next_friday + one_week * 6
+run_dt_yyyy_mm_dd = datetime.today().strftime('%Y-%m-%d')
+prev_friday=next_friday - one_week
+prev_friday_yyyy_mm_dd=prev_friday.strftime('%Y-%m-%d')
 
 
 def get_headers():
@@ -88,7 +91,9 @@ class DB():
         cur = conn.cursor()
         cur.execute(sql_str)
         ret_rows = cur.fetchall()
-        return ret_rows
+        ret_df = pd.DataFrame.from_dict(ret_rows)
+        ret_df.columns = [description[0] for description in cur.description]
+        return ret_df
 
 
 
@@ -178,8 +183,9 @@ class Ticker():
         self.marketStatus = None
         self.lastDataStoreTime = None
         self.dataSource = None
+        # self.prevBusDay=self.get_prevBusDay()
 
-    def get_lastSalePrice(self):
+    def get_lastSalePrice(self): #Realtime price
         url = f'https://api.nasdaq.com/api/quote/{self.ticker}/info?assetclass=stocks'
         # url = 'https://api.nasdaq.com/api/quote/TSLA/realtime-trades?&limit=10&fromTime=00:00'
         response = requests.get(url, headers=get_headers())
@@ -189,6 +195,13 @@ class Ticker():
         float(re.findall("\d+\.\d+", lastSalePrice)[0])
         self.lastSalePrice = lastSalePrice
         return lastSalePrice
+
+    def get_prevBusDay(self):
+        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/historical?assetclass=stocks&fromdate={prev_friday_yyyy_mm_dd}&limit=1&todate={run_dt_yyyy_mm_dd}'
+        # url = 'https://api.nasdaq.com/api/quote/TSLA/realtime-trades?&limit=10&fromTime=00:00'
+        response = requests.get(url, headers=get_headers())
+        lastBusDay = response.json()['data']['tradesTable']['rows'][0]['date']
+        self.lastBusDay_yyyy_mm_dd=pd.to_datetime(lastBusDay).strftime('%Y-%m-%d')
 
 # prev_bus_day_closing price: https://api.nasdaq.com/api/quote/TSLA/historical?assetclass=stocks&fromdate=2021-06-06&limit=1&todate=2021-07-06
 
@@ -213,15 +226,24 @@ class Ticker():
         df.dropna(inplace=True)
         df['load_dt'] = datetime.today().strftime('%Y-%m-%d')
         df['load_tm'] = datetime.today().strftime('%H:%M:%S')
-
         if self.marketStatus =='Market Open':  # Save data only during market hours
             try:
-                if (datetime.today()-self.lastDataStoreTime).seconds/60 > 5:
+                if (datetime.today()-self.lastDataStoreTime).seconds/60 > 15:
                     db.store_data(p_df=df, p_load_dt=load_dt)
                     print('Saved data to file')
                     self.lastDataStoreTime = datetime.today()
             except :
                 self.lastDataStoreTime = datetime.today()
+
+        # get prev bus day Call / Put OpenVolume -Begin
+        # df_1_data = db.query_data(self.prevBusDay)
+        # df_1_data.rename(columns={'c_Openinterest':'c_Openinterest_1', 'p_Openinterest':'p_Openinterest_1'},inplace=True)
+        # df_1_data = df_1_data.apply(pd.to_numeric, errors='coerce')
+        # self.prevBusDay_data=df_1_data
+        # df.strike = df.strike.apply(pd.to_numeric,errors='coerce')
+        # df = pd.merge(df, df_1_data[[['expiryDate', 'strike', 'c_Openinterest_1', 'p_Openinterest_1']], left_on=['expiryDate', 'strike'], right_on=['expiryDate', 'strike'])
+        # get prev bus day Call / Put OpenVolume -End
+
         return df
 
     def get_charts(self):
@@ -252,9 +274,9 @@ class Ticker():
             #Put Volume
             fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Volume.values,name='Put Volume_'+expirydt,marker_color='rgb(300,0,0)',opacity=.4, width=.3), row=i + 1, col=1)
             # #Call/Put Ratio
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_p_ratio.values,name='c_p_Ratio'+expirydt,mode='lines',line_shape='spline',marker_color='rgb(0,300,0)',opacity=.7, line=dict(color='rgb(0,128,0)', width=1, dash='dot')), row=i + 1, col=1, secondary_y=True)
+            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_p_ratio.values,name='c_p_Ratio'+expirydt,mode='lines',line_shape='spline',marker_color='rgb(0,300,0)',opacity=.7, line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
             # #Put/Call Ratio
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_c_ratio.values,name='p_c_Ratio'+expirydt,mode='lines',line_shape='spline',marker_color='rgb(300,0,0)',opacity=.7, line=dict(color='rgb(255,0,0)', width=1, dash='dot')), row=i + 1, col=1, secondary_y=True)
+            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_c_ratio.values,name='p_c_Ratio'+expirydt,mode='lines',line_shape='spline',marker_color='rgb(300,0,0)',opacity=.7, line=dict(color='rgb(255,0,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
 
 
             # Current Price

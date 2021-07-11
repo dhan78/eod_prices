@@ -2,7 +2,7 @@ import os
 import sys
 from datetime import datetime
 import random
-
+import traceback
 import requests
 import pandas as pd
 import sqlite3
@@ -10,7 +10,9 @@ from sqlite3 import Error
 import datetime as dt
 import yfinance as yf
 import numpy as np
-
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
 
 import plotly.graph_objects as go  # or plotly.express as px
 
@@ -66,8 +68,9 @@ class DB():
         conn = None
         try:
             conn = sqlite3.connect(self.DB_PATH)
-        except Error as e:
-            print(e)
+        except:
+            e = sys.exc_info()[1]
+            print(traceback.print_exc())
         return conn
 
     def store_data(self,p_df, p_load_dt):
@@ -80,13 +83,24 @@ class DB():
             conn.executemany(insert_qry, p_df.to_records(index=False))
             conn.commit()
         except:
-            print("Unexpected error:", sys.exc_info()[0])
+            e = sys.exc_info()[1]
+            print(traceback.print_exc())
+
+    def query_spot_price(self,p_load_dt):
+        sql_str = f'''select tsla_spot_price from tsla_nasdaq where load_dt = '{p_load_dt}' order by load_dt desc , load_tm desc limit 1 '''
+        conn=self.create_connection()
+        cur = conn.cursor()
+        cur.execute(sql_str)
+        ret_rows = cur.fetchall()
+        ret_df = pd.DataFrame.from_dict(ret_rows)
+        ret_df.columns = [description[0] for description in cur.description]
+        return ret_df
 
     def query_data(self,p_load_dt):
         # get last row from previous working day
-        sql_str = ''' select *
+        sql_str = f''' select *
         from tsla_nasdaq where
-        (load_dt,load_tm) = (select load_dt , load_tm from tsla_nasdaq order by load_dt desc , load_tm desc limit 1) '''
+        (load_dt,load_tm) = (select load_dt , load_tm from tsla_nasdaq where load_dt = '{p_load_dt}' order by load_dt desc , load_tm desc limit 1) '''
         conn=self.create_connection()
         cur = conn.cursor()
         cur.execute(sql_str)
@@ -183,7 +197,12 @@ class Ticker():
         self.marketStatus = None
         self.lastDataStoreTime = None
         self.dataSource = None
-        # self.prevBusDay=self.get_prevBusDay()
+        self.df_predicted_price = pd.DataFrame()
+        self.prevBusDay=self.get_prevBusDay()
+        self.target_close = None
+        self.target_close_lst = [self.target_close]
+        self.df, self.fig = None, None
+        self.dict_target={}
 
     def get_lastSalePrice(self): #Realtime price
         url = f'https://api.nasdaq.com/api/quote/{self.ticker}/info?assetclass=stocks'
@@ -192,8 +211,7 @@ class Ticker():
         lastSalePrice = response.json()['data']['primaryData']['lastSalePrice']
         self.marketStatus = response.json()['data']['marketStatus']
 
-        float(re.findall("\d+\.\d+", lastSalePrice)[0])
-        self.lastSalePrice = lastSalePrice
+        self.lastSalePrice = float(re.findall("\d+\.\d+", lastSalePrice)[0])
         return lastSalePrice
 
     def get_prevBusDay(self):
@@ -229,6 +247,8 @@ class Ticker():
         if self.marketStatus =='Market Open':  # Save data only during market hours
             try:
                 if (datetime.today()-self.lastDataStoreTime).seconds/60 > 15:
+                    df.drop(['expirygroup','c_colour','p_colour','drillDownURL'],axis=1,inplace=True)
+                    df['tsla_spot_price'] = self.lastSalePrice
                     db.store_data(p_df=df, p_load_dt=load_dt)
                     print('Saved data to file')
                     self.lastDataStoreTime = datetime.today()
@@ -343,9 +363,6 @@ class Ticker():
             title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[-15, 60], row=i + 1, col=2) #,ticksuffix="%")
 
-
-
-
         fig.update_layout(
             title=f"Put Call Open Interest. [{self.dataSource}] @ <b>{datetime.today().strftime('%I:%M %p')}... {self.marketStatus}</b>",
             xaxis_tickfont_size=14,
@@ -371,7 +388,52 @@ class Ticker():
             bargroupgap=0.1,  # gap between bars of the same location coordinate.
             # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour
         )
+        #Save df & fig for future updates
+        self.df, self.fig = df, fig
         return fig
+
+    def predict(self):
+        df_friday = db.query_data(p_load_dt=prev_friday_yyyy_mm_dd)
+        for i, expiry in enumerate(self.df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
+            expirydt_yyyy_mm_dd = expiry[0].strftime('%Y-%m-%d')
+
+            expiry_dt_mon_dt = expiry[0].strftime('%b %d')
+            if df_friday.loc[df_friday.expiryDate == expiry_dt_mon_dt].shape[0] < 10: continue  # new week wont have data in database
+
+            closing_price = db.query_spot_price(p_load_dt=prev_friday_yyyy_mm_dd)
+            closing_price = closing_price.values[0]
+
+            ######################
+            # Fit model using
+            # X = transformed strike (strike-closing_price) : strike - closing_price
+            # Y = friday closing price      : c_Last
+            poly = PolynomialFeatures(degree=4)
+            poly_x = poly.fit_transform(df_friday.loc[df_friday.expiryDate == expiry_dt_mon_dt, ['strike']]-closing_price)
+            y = df_friday.loc[df_friday.expiryDate == expiry_dt_mon_dt, ['c_Last']]
+            model = LinearRegression()
+            model.fit(poly_x, y)
+            ######################
+
+            strike = self.df[self.df.expirygroup == expiry[0].strftime('%Y-%m-%d')]['strike']
+            new_strike = self.df[self.df.expirygroup == expiry[0].strftime('%Y-%m-%d')].strike.apply(
+                lambda x: float(x) - self.target_close)
+            # predict using this weeks latest strikes/expiries
+            predicted_price=model.predict(poly.transform(new_strike[:,np.newaxis]))
+            self.dict_target[expirydt_yyyy_mm_dd]=pd.DataFrame.from_records(predicted_price,columns=['target_closing_price'],index=strike).reset_index()
+
+        self.update_fig(self.dict_target)
+
+    def update_fig(self,dict_target):
+        # Price Predictions -- Start
+        for i, expiry in enumerate(self.df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
+            expirydt = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%Y-%m-%d')
+            new_targets=dict_target.get(expirydt,pd.DataFrame())
+            if new_targets.shape[0]<10: continue
+            self.fig.append_trace(
+                go.Scatter(x=new_targets.strike.values, y=new_targets.target_closing_price.values, name='*[' + str(self.target_close)+']', mode='lines',
+                           line_shape='spline', marker_color='rgb(225,0,0)', opacity=.7, line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=2)
+
+        return self.fig
 
 
 # app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
@@ -402,10 +464,14 @@ app.layout = html.Div([
     #             centered=True
     #             ),
     # dcc.Graph(id='optionGraph', figure=figOption),
+    # dcc.Slider(id='target_close',  min=600,    max=700,    step=0.5,    value=675),
+    dcc.Input(id="target_close", type="number",debounce=True, placeholder="0"),
+    html.Div(id='slider-output-container'),
+    html.Button('Reset Targets', id='reset-val', n_clicks=0),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(
         id='interval-component',
-        interval= 60 * 1000,  # in milliseconds
+        interval= 1000 * 1000,  # in milliseconds
         n_intervals=0
     ),
     html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'}),
@@ -428,26 +494,58 @@ app.layout = html.Div([
 #     print(oc.p_url, oc.c_url)
 #     return not is_open
 
-@app.callback(Output('graph', 'figure'),
-              Input('interval-component', 'n_intervals'))
-def update_graph_live(n):
-    # current_price = get_lastSalePrice()
-    print('updating graph')
-    return tickr.get_charts()
+# @app.callback(Output('graph', 'figure'),
+#               Input('interval-component', 'n_intervals'))
+# def update_graph_live(n):
+#     print('updating graph')
+#     return tickr.get_charts()
 
 @app.callback(
-    Output('textarea-example-output', 'children'),
-    [Input('graph', 'clickData')],
-    [State('graph','figure')])
-def display_click_data(clickData,figure):
-     try:
-        curveNum = clickData['points'][0]['curveNumber']
-        clickData['points'][0]['curveName']= figure['data'][curveNum]['name']
-        # oc.set_symbol_name(clickData)
-     except:
-        pass
+    [Output('graph', 'figure'),
+     Output('textarea-example-output', 'children'),
+     Output('slider-output-container', 'children')],
+    [Input('target_close', 'value'),
+     Input('graph', 'clickData'),
+     Input('interval-component', 'n_intervals'),Input('reset-val', 'n_clicks')],
+    [State('graph','figure'),State('target_close','value')])
+def display_click_data(target_closing_price, clickData,n_intervals, n_clicks, figure,target_close):
+    tickr.target_close_lst.append(target_close)
+    target_close_text = 'Target Closing Price (Modeled) : "{}"'.format(', '.join([str(i) for i in list(set(tickr.target_close_lst)) if i]))
+    try:
+        ctx = dash.callback_context
+        if ctx.triggered[0]['prop_id'] == 'graph.clickData':
+            # curveNum = clickData['points'][0]['curveNumber']
+            # clickData['points'][0]['curveName']= figure['data'][curveNum]['name']
+            # df_click=pd.DataFrame(clickData['points']).dropna(subset=['curveName'])
+            # tickr.target_close=target_close
+            # tickr.predict(df_click)
+            return tickr.fig,json.dumps(clickData, indent=2),target_close_text
+        elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals':
+            return tickr.get_charts(),json.dumps(clickData, indent=2),target_close_text
+        elif ctx.triggered[0]['prop_id'] == 'target_close.value':
+            tickr.target_close = target_close
+            tickr.predict()
+            return tickr.fig, json.dumps(clickData, indent=2),target_close_text
+        elif ctx.triggered[0]['prop_id'] == 'reset-val.n_clicks':
+            tickr.target_close_lst = []
+            tickr.dict_target = {}
+            target_close_text = 'Target Closing Price : "{}"'.format(
+                ', '.join([str(i) for i in list(set(tickr.target_close_lst))]))
+            return tickr.get_charts(), json.dumps(clickData, indent=2), target_close_text
+    except:
+        e = sys.exc_info()[1]
+        print (traceback.print_exc())
 
-     return json.dumps(clickData, indent=2)
+    return fig, json.dumps(clickData, indent=2),target_close_text
+
+
+# @app.callback(
+#     [Input('reset-val', 'n_clicks')])
+# def update_output(n_clicks):
+#     tickr.target_close_lst = []
+#     tickr.dict_target = {}
+    # return 'Target Closing Price : slide through to add new targets '
+
 
 
 app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter

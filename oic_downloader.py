@@ -255,14 +255,6 @@ class Ticker():
             except :
                 self.lastDataStoreTime = datetime.today()
 
-        # get prev bus day Call / Put OpenVolume -Begin
-        # df_1_data = db.query_data(self.prevBusDay)
-        # df_1_data.rename(columns={'c_Openinterest':'c_Openinterest_1', 'p_Openinterest':'p_Openinterest_1'},inplace=True)
-        # df_1_data = df_1_data.apply(pd.to_numeric, errors='coerce')
-        # self.prevBusDay_data=df_1_data
-        # df.strike = df.strike.apply(pd.to_numeric,errors='coerce')
-        # df = pd.merge(df, df_1_data[[['expiryDate', 'strike', 'c_Openinterest_1', 'p_Openinterest_1']], left_on=['expiryDate', 'strike'], right_on=['expiryDate', 'strike'])
-        # get prev bus day Call / Put OpenVolume -End
 
         return df
 
@@ -343,6 +335,9 @@ class Ticker():
             fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_1.values,  name='P-1 ' + expirydt, mode='lines',line_shape='spline',marker_color='rgb(350,0,0)',opacity=.8,line=dict(color='rgb(255,0,0)', width=1, dash='dot')), row=i + 1, col=2)
 
 
+
+
+            fig.add_vline(x=self.lastSalePrice, line_dash='dash',line_color='black',line_width=.6, row=i + 1, col=2)
             # Current price
             fig.append_trace(go.Scatter(
                 x=[self.lastSalePrice],
@@ -369,13 +364,6 @@ class Ticker():
             height=1800, width=1900,
             showlegend=False,
             title_font_size= 14,
-            # yaxis=dict(
-            #     title='Open Interest',
-            #     titlefont_size=16,
-            #     tickfont_size=14,
-            #     range=[100,10000]
-            # ),
-            # xaxis=dict(dtick=2.5,tickangle=-90),
             legend=dict(
                 x=0,
                 y=1.0,
@@ -390,9 +378,12 @@ class Ticker():
         )
         #Save df & fig for future updates
         self.df, self.fig = df, fig
+        self.predict()
         return fig
 
     def predict(self):
+        if not self.target_close: return #No need to update with predictions if no target closing price provided
+
         def fit_model(call_put_col_name):
             model_dataset_conditions=(df_friday.expiryDate == expiry_dt_mon_dt )& (df_friday[call_put_col_name] > 0.5)
             poly_x = poly.fit_transform(df_friday.loc[model_dataset_conditions, ['strike']]-closing_price)
@@ -448,7 +439,6 @@ class Ticker():
                 go.Scatter(x=new_targets.strike.values, y=new_targets.p_target_closing_price.values, name='*[' + str(self.target_close) + ']', mode='lines',
                            line_shape='spline', marker_color='rgb(121, 8, 3 )', opacity=.7, line=dict(color='rgb(121, 8, 3 )', width=1, )), row = i + 1, col = 2)
 
-
         return self.fig
 
 
@@ -460,61 +450,22 @@ tickr = Ticker('TSLA')
 fig = tickr.get_charts()
 figOption = None
 
+
 app.layout = html.Div([
-    # dbc.Button("Open modal", id="open", n_clicks=0),
-    # dbc.Modal(
-    #             [
-    #                 dbc.ModalBody([html.Img(src=oc.c_url, style={"width": "25%"}),
-    #                               html.Img(src=oc.p_url, style={"width": "25%"})]),
-    #                 dbc.ModalFooter(
-    #                     dbc.Button(
-    #                         "Close", id="close", className="ml-auto", n_clicks=0
-    #                     ))
-    #
-    #             ],
-    #             id="modal",
-    #             is_open=oc.display_status,
-    #             size="sm",
-    #             backdrop=True,
-    #             fade=True,
-    #             centered=True
-    #             ),
-    # dcc.Graph(id='optionGraph', figure=figOption),
-    # dcc.Slider(id='target_close',  min=600,    max=700,    step=0.5,    value=675),
     dcc.Input(id="target_close", type="number",debounce=True, placeholder="0"),
-    html.Div(id='slider-output-container'),
+    html.Div(id='slider-output-container',style={'height':'20px','font-family':'Arial',
+                               'font-size': '12px'}),
     html.Button('Reset Targets', id='reset-val', n_clicks=0),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(
         id='interval-component',
-        interval= 1000 * 1000,  # in milliseconds
+        interval= 60 * 1000,  # in milliseconds
         n_intervals=0
     ),
     html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'}),
 ])
-# @app.callback(
-#     Output("modal", "is_open"),
-#     [Input("open", "n_clicks"), Input("close", "n_clicks")],
-#     [State("modal", "is_open")],
-# )
-# def toggle_modal(n1, n2, is_open):
-#     if n1 or n2:
-#         return not is_open
-#     return is_open
 
-# @app.callback(
-#     Output('modal', 'is_open'),
-#     [Input('graph', 'clickData')],
-#     [State('modal', 'is_open')])
-# def display_option_history(clickData,is_open):
-#     print(oc.p_url, oc.c_url)
-#     return not is_open
 
-# @app.callback(Output('graph', 'figure'),
-#               Input('interval-component', 'n_intervals'))
-# def update_graph_live(n):
-#     print('updating graph')
-#     return tickr.get_charts()
 
 @app.callback(
     [Output('graph', 'figure'),
@@ -529,20 +480,16 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks, fi
     target_close_text = 'Target Closing Price (Modeled) : "{}"'.format(', '.join([str(i) for i in list(set(tickr.target_close_lst)) if i]))
     try:
         ctx = dash.callback_context
-        if ctx.triggered[0]['prop_id'] == 'graph.clickData':
-            # curveNum = clickData['points'][0]['curveNumber']
-            # clickData['points'][0]['curveName']= figure['data'][curveNum]['name']
-            # df_click=pd.DataFrame(clickData['points']).dropna(subset=['curveName'])
-            # tickr.target_close=target_close
-            # tickr.predict(df_click)
+
+        if ctx.triggered[0]['prop_id'] == 'graph.clickData': # just clicking chart
             return tickr.fig,json.dumps(clickData, indent=2),target_close_text
-        elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals':
+        elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals': # triggered by timer
             return tickr.get_charts(),json.dumps(clickData, indent=2),target_close_text
-        elif ctx.triggered[0]['prop_id'] == 'target_close.value':
+        elif ctx.triggered[0]['prop_id'] == 'target_close.value': # triggered by changing target_close
             tickr.target_close = target_close
             tickr.predict()
             return tickr.fig, json.dumps(clickData, indent=2),target_close_text
-        elif ctx.triggered[0]['prop_id'] == 'reset-val.n_clicks':
+        elif ctx.triggered[0]['prop_id'] == 'reset-val.n_clicks': # triggered by clicking reset button
             tickr.target_close_lst = []
             tickr.dict_target = {}
             target_close_text = 'Target Closing Price : "{}"'.format(
@@ -555,12 +502,6 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks, fi
     return fig, json.dumps(clickData, indent=2),target_close_text
 
 
-# @app.callback(
-#     [Input('reset-val', 'n_clicks')])
-# def update_output(n_clicks):
-#     tickr.target_close_lst = []
-#     tickr.dict_target = {}
-    # return 'Target Closing Price : slide through to add new targets '
 
 
 

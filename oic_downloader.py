@@ -393,11 +393,21 @@ class Ticker():
         return fig
 
     def predict(self):
+        def fit_model(call_put_col_name):
+            model_dataset_conditions=(df_friday.expiryDate == expiry_dt_mon_dt )& (df_friday[call_put_col_name] > 0.5)
+            poly_x = poly.fit_transform(df_friday.loc[model_dataset_conditions, ['strike']]-closing_price)
+            y = df_friday.loc[model_dataset_conditions, [call_put_col_name]]
+            model = LinearRegression()
+            model.fit(poly_x, y)
+            return model
+
+
         df_friday = db.query_data(p_load_dt=prev_friday_yyyy_mm_dd)
+        df_friday[['c_Last','p_Last']] = df_friday[['c_Last','p_Last']].apply(pd.to_numeric,errors='coerce')
         for i, expiry in enumerate(self.df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             expirydt_yyyy_mm_dd = expiry[0].strftime('%Y-%m-%d')
 
-            expiry_dt_mon_dt = expiry[0].strftime('%b %d')
+            expiry_dt_mon_dt = (expiry[0]-one_week).strftime('%b %d')
             if df_friday.loc[df_friday.expiryDate == expiry_dt_mon_dt].shape[0] < 10: continue  # new week wont have data in database
 
             closing_price = db.query_spot_price(p_load_dt=prev_friday_yyyy_mm_dd)
@@ -407,19 +417,21 @@ class Ticker():
             # Fit model using
             # X = transformed strike (strike-closing_price) : strike - closing_price
             # Y = friday closing price      : c_Last
-            poly = PolynomialFeatures(degree=4)
-            poly_x = poly.fit_transform(df_friday.loc[df_friday.expiryDate == expiry_dt_mon_dt, ['strike']]-closing_price)
-            y = df_friday.loc[df_friday.expiryDate == expiry_dt_mon_dt, ['c_Last']]
-            model = LinearRegression()
-            model.fit(poly_x, y)
+            poly = PolynomialFeatures(degree=3)
+            c_model = fit_model('c_Last')
+            p_model = fit_model('p_Last')
             ######################
 
             strike = self.df[self.df.expirygroup == expiry[0].strftime('%Y-%m-%d')]['strike']
             new_strike = self.df[self.df.expirygroup == expiry[0].strftime('%Y-%m-%d')].strike.apply(
                 lambda x: float(x) - self.target_close)
             # predict using this weeks latest strikes/expiries
-            predicted_price=model.predict(poly.transform(new_strike[:,np.newaxis]))
-            self.dict_target[expirydt_yyyy_mm_dd]=pd.DataFrame.from_records(predicted_price,columns=['target_closing_price'],index=strike).reset_index()
+            c_predicted_price=c_model.predict(poly.transform(new_strike[:,np.newaxis]))
+            c_predicted_price[~np.greater(c_predicted_price, 0.1)] = 0.1
+            p_predicted_price=p_model.predict(poly.transform(new_strike[:,np.newaxis]))
+            p_predicted_price[~np.greater(p_predicted_price, 0.1)] = 0.1
+
+            self.dict_target[expirydt_yyyy_mm_dd]=pd.DataFrame.from_records(np.concatenate((c_predicted_price,p_predicted_price),axis=1),columns=['c_target_closing_price','p_target_closing_price'],index=strike).reset_index()
 
         self.update_fig(self.dict_target)
 
@@ -430,8 +442,12 @@ class Ticker():
             new_targets=dict_target.get(expirydt,pd.DataFrame())
             if new_targets.shape[0]<10: continue
             self.fig.append_trace(
-                go.Scatter(x=new_targets.strike.values, y=new_targets.target_closing_price.values, name='*[' + str(self.target_close)+']', mode='lines',
-                           line_shape='spline', marker_color='rgb(225,0,0)', opacity=.7, line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=2)
+                go.Scatter(x=new_targets.strike.values, y=new_targets.c_target_closing_price.values, name='*[' + str(self.target_close)+']', mode='lines',
+                           line_shape='spline', marker_color='rgb(41, 74, 253 )', opacity=.7, line=dict(color='rgb(41, 74, 253 )', width=1, )), row=i + 1, col=2)
+            self.fig.append_trace(
+                go.Scatter(x=new_targets.strike.values, y=new_targets.p_target_closing_price.values, name='*[' + str(self.target_close) + ']', mode='lines',
+                           line_shape='spline', marker_color='rgb(121, 8, 3 )', opacity=.7, line=dict(color='rgb(121, 8, 3 )', width=1, )), row = i + 1, col = 2)
+
 
         return self.fig
 

@@ -382,7 +382,7 @@ class Ticker():
         return fig
 
     def predict(self):
-        if not self.target_close: return #No need to update with predictions if no target closing price provided
+        if self.target_close is None: return #No need to update with predictions if no target closing price provided
 
         def fit_model(call_put_col_name):
             model_dataset_conditions=(df_friday.expiryDate == expiry_dt_mon_dt )& (df_friday[call_put_col_name] > 0.5)
@@ -484,13 +484,15 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks, fi
         if ctx.triggered[0]['prop_id'] == 'graph.clickData': # just clicking chart
             return tickr.fig,json.dumps(clickData, indent=2),target_close_text
         elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals': # triggered by timer
+            tickr.get_lastSalePrice()
             return tickr.get_charts(),json.dumps(clickData, indent=2),target_close_text
         elif ctx.triggered[0]['prop_id'] == 'target_close.value': # triggered by changing target_close
             tickr.target_close = target_close
+            tickr.get_lastSalePrice()
             tickr.predict()
             return tickr.fig, json.dumps(clickData, indent=2),target_close_text
         elif ctx.triggered[0]['prop_id'] == 'reset-val.n_clicks': # triggered by clicking reset button
-            tickr.target_close_lst = []
+            tickr.target_close_lst , tickr.target_close = [], None
             tickr.dict_target = {}
             target_close_text = 'Target Closing Price : "{}"'.format(
                 ', '.join([str(i) for i in list(set(tickr.target_close_lst))]))

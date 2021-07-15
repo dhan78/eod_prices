@@ -322,9 +322,9 @@ class Ticker():
             df_expiry['p_1'] = df_expiry.p_Last - df_expiry.p_Change
 
             # Call price Change (Theta decay)
-            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_Change'].values, hovertemplate='%{y:.2f}', name='C Decay' + expirydt, marker_color='rgb(0,150,0)', opacity=.8, width=.3), row=i + 1, col=2)
+            #fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_Change'].values, hovertemplate='%{y:.2f}', name='C Decay' + expirydt, marker_color='rgb(0,150,0)', opacity=.8, width=.3), row=i + 1, col=2)
             # Put Price Change (Theta decay)
-            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_Change'].values, hovertemplate='%{y:.2f}', name='P Decay' + expirydt, marker_color='rgb(255,0,0)', opacity=.8, width=.3), row=i + 1, col=2)
+            #fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_Change'].values, hovertemplate='%{y:.2f}', name='P Decay' + expirydt, marker_color='rgb(255,0,0)', opacity=.8, width=.3), row=i + 1, col=2)
             # Call prices
             fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, name='C '+expirydt, mode='lines',line_shape='spline',marker_color='rgb(0,128,0)',opacity=.8), row=i + 1, col=2)
             # Put prices
@@ -378,8 +378,9 @@ class Ticker():
         )
         #Save df & fig for future updates
         self.df, self.fig = df, fig
+        self.target_close_lst = list(dict.fromkeys(self.target_close_lst)) # dedupe list
         self.predict()
-        return fig
+        return self.fig
 
     def predict(self):
         if self.target_close is None: return #No need to update with predictions if no target closing price provided
@@ -507,4 +508,4 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks, fi
 
 
 
-app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter
+app.run_server(debug=False, host='0.0.0.0')  # Turn off reloader if inside Jupyter

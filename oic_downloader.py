@@ -109,6 +109,16 @@ class DB():
         ret_df.columns = [description[0] for description in cur.description]
         return ret_df
 
+    def query_sql_data(self,p_sql):
+        sql_str = p_sql
+        conn=self.create_connection()
+        cur = conn.cursor()
+        cur.execute(sql_str)
+        ret_rows = cur.fetchall()
+        ret_df = pd.DataFrame.from_dict(ret_rows)
+        ret_df.columns = [description[0] for description in cur.description]
+        return ret_df
+
 
 
 class YahooFinance():
@@ -169,23 +179,44 @@ class YahooFinance():
 
 
 class OptionChart():
-    def __init__(self,df, name):
-        self.df, self.name=df, name
-        self.display_status=False
-        self.c_url, self.p_url = '',''
-    def set_symbol_name(self,name):
-        symname=name
-        ticker='@TSLA%20%20'
-        top_url = '''https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol='''+ticker
-        dt=pd.to_datetime(name['points'][0]['curveName'].split('_')[1]).strftime('%y%m%d')
-        strike=name['points'][0]['x']
-        strike_str='{:09.3F}'.format(strike).replace('.','')
-        c_name=dt+'C'+strike_str
-        p_name=dt+'P'+strike_str
-        rest_of_url='''&chscale=1m&chtype=AreaChart'''
-        c_url = c_name+rest_of_url
-        p_url = p_name + rest_of_url
-        self.c_url, self.p_url = top_url+c_url, top_url+p_url
+    def __init__(self,expiry_dt, strike):
+        if isinstance(expiry_dt, pd.Series):
+            self.expiry_dt = expiry_dt.values[0]
+            self.strike = strike.values[0]
+        else:
+            self.expiry_dt = expiry_dt
+            self.strike = strike
+
+    def generate_fig(self):
+        sql_qry=f'''select expiryDate, c_Last, p_Last, tsla_spot_price,  load_dt, load_tm from tsla_nasdaq where expiryDate = '{self.expiry_dt}' and strike = {self.strike} and tsla_spot_price not null order by load_dt, load_tm '''
+        df_option = db.query_sql_data(sql_qry)
+        df_option['dt'] = pd.to_datetime(df_option.load_dt + ' ' + df_option.load_tm)
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        fig.add_trace(go.Scatter(x=df_option.index, y=df_option.c_Last, mode='lines',line_shape='spline',marker_color='rgb(0,128,0)',opacity=.8))
+        fig.add_trace(go.Scatter(x=df_option.index, y=df_option.p_Last, mode='lines', line_shape='spline',
+                                 marker_color='rgb(128,0,0)', opacity=.8))
+        fig.add_trace(go.Scatter(x=df_option.index, y=df_option.tsla_spot_price, mode='lines', line_shape='spline',
+                                 marker_color='rgb(0,0,0)', opacity=.8),secondary_y=True)
+        fig.update_layout(
+            title=f"Put Call Price history. [{self.expiry_dt}] @ <b>{self.strike}... </b>",
+            xaxis_tickfont_size=14,
+            height=600, width=1900,
+            hovermode='x',
+            xaxis = dict(
+                tickmode='array',
+                tickvals=df_option.index,
+                ticktext=df_option['dt'].apply(lambda x: x.strftime('%b %d %H:%M')),
+                tickangle = -90,
+                tickfont = dict(
+                            size=10,
+                            color="blue"
+                            )
+                        )
+        )
+        # fig.update_xaxes(rangebreaks=[dict(values=df_option.dt)])
+
+        return fig
+
     def get_symbol_name(self):
         return [self.c_url, self.p_url]
 
@@ -227,7 +258,7 @@ class Ticker():
         load_dt = datetime.today().strftime('%Y-%m-%d')
         weekly_expiry_end = weekly_expiry_target.strftime('%Y-%m-%d')
 
-        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/option-chain?assetclass=stocks&limit=600&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
+        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/option-chain?assetclass=stocks&limit=800&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
         response = requests.get(url, headers=get_headers())
         # rws = response.json()['data']['rows']
         if response.json()['data']:
@@ -263,8 +294,6 @@ class Ticker():
         df = self.oic_api_call()
 
         if df is None: return None
-
-        oc = OptionChart(df=df, name=None)
 
         num_or_charts = len(df.expirygroup.unique())
 
@@ -449,6 +478,7 @@ db=DB(db_file='data_store.sqlite')
 tickr = Ticker('TSLA')
 # current_price = tickr.get_lastSalePrice()
 fig = tickr.get_charts()
+oc = OptionChart(None,None)
 figOption = None
 
 
@@ -457,55 +487,66 @@ app.layout = html.Div([
     html.Div(id='slider-output-container',style={'height':'20px','font-family':'Arial',
                                'font-size': '12px'}),
     html.Button('Reset Targets', id='reset-val', n_clicks=0),
+    dcc.Graph(id='option-chart-output', figure ={}),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(
         id='interval-component',
-        interval= 60 * 1000,  # in milliseconds
+        interval= 30 * 1000,  # in milliseconds
         n_intervals=0
-    ),
-    html.Div(id='textarea-example-output', style={'whiteSpace': 'pre-line'}),
+    )
+
 ])
 
 
 
 @app.callback(
     [Output('graph', 'figure'),
-     Output('textarea-example-output', 'children'),
+     Output('option-chart-output', 'figure'),
      Output('slider-output-container', 'children')],
     [Input('target_close', 'value'),
      Input('graph', 'clickData'),
      Input('interval-component', 'n_intervals'),Input('reset-val', 'n_clicks')],
-    [State('graph','figure'),State('target_close','value')])
+    [State('graph','figure'),State('target_close','value')],
+    prevent_initial_call=True
+)
 def display_click_data(target_closing_price, clickData,n_intervals, n_clicks, figure,target_close):
     tickr.target_close_lst.append(target_close)
     target_close_text = 'Target Closing Price (Modeled) : "{}"'.format(', '.join([str(i) for i in list(set(tickr.target_close_lst)) if i]))
+
     try:
         ctx = dash.callback_context
 
         if ctx.triggered[0]['prop_id'] == 'graph.clickData': # just clicking chart
-            return tickr.fig,json.dumps(clickData, indent=2),target_close_text
+            curveNum = clickData['points'][0]['curveNumber']
+            clickData['points'][0]['curveName'] = figure['data'][curveNum]['name']
+            df_click = pd.DataFrame(clickData['points']).dropna(subset=['curveName'])
+            df_click['expiry_dt'] = df_click.curveName.apply(lambda x: pd.to_datetime(x.split()[1]).strftime('%b %d'))
+            oc = OptionChart(df_click.expiry_dt,df_click.x)
+            return tickr.fig,oc.generate_fig(),target_close_text
         elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals': # triggered by timer
             tickr.get_lastSalePrice()
-            return tickr.get_charts(),json.dumps(clickData, indent=2),target_close_text
+            return tickr.get_charts(),dash.no_update,target_close_text
         elif ctx.triggered[0]['prop_id'] == 'target_close.value': # triggered by changing target_close
             tickr.target_close = target_close
             tickr.get_lastSalePrice()
             tickr.predict()
-            return tickr.fig, json.dumps(clickData, indent=2),target_close_text
+            return tickr.fig, dash.no_update,target_close_text
         elif ctx.triggered[0]['prop_id'] == 'reset-val.n_clicks': # triggered by clicking reset button
             tickr.target_close_lst , tickr.target_close = [], None
             tickr.dict_target = {}
             target_close_text = 'Target Closing Price : "{}"'.format(
                 ', '.join([str(i) for i in list(set(tickr.target_close_lst))]))
-            return tickr.get_charts(), json.dumps(clickData, indent=2), target_close_text
+            return tickr.get_charts(), dash.no_update, target_close_text
+
+            #return dash.no_update, , target_close_text
     except:
         e = sys.exc_info()[1]
         print (traceback.print_exc())
-
-    return fig, json.dumps(clickData, indent=2),target_close_text
-
-
+        raise dash.exceptions.PreventUpdate
+        return fig, dash.no_update,target_close_text
 
 
 
-app.run_server(debug=False, host='0.0.0.0')  # Turn off reloader if inside Jupyter
+
+
+app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter

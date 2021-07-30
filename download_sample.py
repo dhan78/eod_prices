@@ -1,46 +1,53 @@
-import io
 import dash
+import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output, State
-from dash.exceptions import PreventUpdate
-from dash_extensions import Download
-import dash_table
-from flask import Flask
-import pandas as pd
+from dash.dependencies import Input, Output
 
-server = Flask(__name__)
-app = dash.Dash(server=server)
+app = dash.Dash()
 
-df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/solar.csv')
+app.layout = html.Div(children=[
+    html.H1(children='Hello Dash'),
 
-app.layout = html.Div(
-                [
-                    Download(id="download"),
-                    html.Button("Download",
-                                id="save-button"),
-                    html.Div("Press button to save data at your desktop",
-                             id="output-1"),
-                    dash_table.DataTable(
-                        id='table',
-                        columns=[{"name": i, "id": i} for i in df.columns],
-                        data=df.to_dict('records'),
-                    )
-                ]
-            )
+    html.Div(children='''
+        Dash: A web application framework for Python.
+    '''),
+
+    html.Label("Show?"),
+    dcc.Dropdown(
+        id="my-input",
+        options = [
+            {'label':'Yes', 'value':1},
+            {'label':'No', 'value':0}
+        ]
+    ),
+    html.Div(
+        id="graph-container",
+        children = [
+
+        dcc.Graph(
+        id='example-graph',
+        figure={
+            'data': [
+                {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
+                {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
+            ],
+            'layout': {
+                'title': 'Dash Data Visualization'
+            }
+        }
+    )
+    ])
 
 
-@app.callback(
-Output("download", "data"),
-Input("save-button", "n_clicks"),
-State("table", "data"))
-def download_as_csv(n_clicks, table_data):
-    df = pd.DataFrame.from_dict(table_data)
-    if not n_clicks:
-      raise PreventUpdate
-    download_buffer = io.StringIO()
-    df.to_csv(download_buffer, index=False)
-    download_buffer.seek(0)
-    return dict(content=download_buffer.getvalue(), filename="some_filename.csv")
+])
+
+@app.callback(Output('graph-container', 'style'), [Input('my-input', 'value')],prevent_initial_call=True)
+def hide_graph(my_input):
+    if my_input:
+        return {'display':'block'}
+    return {'display':'none'}
+
+
 
 if __name__ == '__main__':
-    app.run_server(port='8099')
+    app.run_server(port=8125, debug = True)

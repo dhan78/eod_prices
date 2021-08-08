@@ -480,14 +480,15 @@ tickr = Ticker('TSLA')
 fig = tickr.get_charts()
 oc = OptionChart(None,None)
 figOption = None
-
+# {'display':'none'}
+# {'display':'block'}
 
 app.layout = html.Div([
     dcc.Input(id="target_close", type="number",debounce=True, placeholder="0"),
     html.Div(id='slider-output-container',style={'height':'20px','font-family':'Arial',
                                'font-size': '12px'}),
     html.Button('Reset Targets', id='reset-val', n_clicks=0),
-    dcc.Graph(id='option-chart-output', figure ={}),
+    html.Div(id='option-chart-output-id',children=[dcc.Graph(id='option-chart-output', figure ={})]),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(
         id='interval-component',
@@ -502,7 +503,8 @@ app.layout = html.Div([
 @app.callback(
     [Output('graph', 'figure'),
      Output('option-chart-output', 'figure'),
-     Output('slider-output-container', 'children')],
+     Output('slider-output-container', 'children'),
+     Output('option-chart-output-id','style')],
     [Input('target_close', 'value'),
      Input('graph', 'clickData'),
      Input('interval-component', 'n_intervals'),Input('reset-val', 'n_clicks')],
@@ -522,28 +524,30 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks, fi
             df_click = pd.DataFrame(clickData['points']).dropna(subset=['curveName'])
             df_click['expiry_dt'] = df_click.curveName.apply(lambda x: pd.to_datetime(x.split()[1]).strftime('%b %d'))
             oc = OptionChart(df_click.expiry_dt,df_click.x)
-            return tickr.fig,oc.generate_fig(),target_close_text
+            return tickr.fig,oc.generate_fig(),target_close_text, {'display':'block'}
         elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals': # triggered by timer
             tickr.get_lastSalePrice()
-            return tickr.get_charts(),dash.no_update,target_close_text
+            if tickr.marketStatus == 'Market Closed': raise dash.exceptions.PreventUpdate()
+
+            return tickr.get_charts(),dash.no_update,target_close_text,{'display':'none'}
         elif ctx.triggered[0]['prop_id'] == 'target_close.value': # triggered by changing target_close
             tickr.target_close = target_close
             tickr.get_lastSalePrice()
             tickr.predict()
-            return tickr.fig, dash.no_update,target_close_text
+            return tickr.fig, dash.no_update,target_close_text, {'display':'none'}
         elif ctx.triggered[0]['prop_id'] == 'reset-val.n_clicks': # triggered by clicking reset button
             tickr.target_close_lst , tickr.target_close = [], None
             tickr.dict_target = {}
             target_close_text = 'Target Closing Price : "{}"'.format(
                 ', '.join([str(i) for i in list(set(tickr.target_close_lst))]))
-            return tickr.get_charts(), dash.no_update, target_close_text
+            return tickr.get_charts(), dash.no_update, target_close_text, {'display':'none'}
 
             #return dash.no_update, , target_close_text
     except:
         e = sys.exc_info()[1]
         print (traceback.print_exc())
         raise dash.exceptions.PreventUpdate
-        return fig, dash.no_update,target_close_text
+        # return fig, dash.no_update,target_close_text, dash
 
 
 

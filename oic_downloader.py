@@ -501,7 +501,7 @@ app.layout = html.Div([
         id="switches-input",
         switch=True,
     ),
-    html.Div(id='option-chart-output-id',children=[dcc.Graph(id='option-chart-output', figure ={})],style={'display': 'block'}),
+    html.Div(id='option-chart-output-id',children=[dcc.Graph(id='option-chart-output', figure ={})],style={'display': 'none'}),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(
         id='interval-component',

@@ -491,14 +491,13 @@ app.layout = html.Div([
     dbc.Checklist(
         options=[
             {"label": "ShowOptionHistory", "value": "showOptionHistory"},
-            {"label": "placeHolder", "value": "placeHolder", "disabled": True},
-            {"label": "Disabled Option", "value": 3, "disabled": True},
+            # {"label": "Disabled Option", "value": 3, "disabled": True},
         ],
         value=["showOptionHistory"],
         id="switches-input",
         switch=True,
     ),
-    html.Div(id='option-chart-output-id',children=[dcc.Graph(id='option-chart-output', figure ={})]),
+    html.Div(id='option-chart-output-id',children=[dcc.Graph(id='option-chart-output', figure ={})],style={'display': 'block'}),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(
         id='interval-component',
@@ -558,7 +557,7 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
                 ', '.join([str(i) for i in list(set(tickr.target_close_lst))]))
             return tickr.get_charts(), dash.no_update, target_close_text, get_option_chart_display(switch_value)
         elif ctx.triggered[0]['prop_id'] == 'switches-input.value':  # triggered by clicking reset button
-            dash.no_update, dash.no_update, dash.no_update, get_option_chart_display(switch_value)
+            return dash.no_update, dash.no_update, dash.no_update, get_option_chart_display(switch_value)
     except:
         e = sys.exc_info()[1]
         print (traceback.print_exc())

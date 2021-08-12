@@ -192,15 +192,19 @@ class OptionChart():
         df_option = db.query_sql_data(sql_qry)
         df_option['dt'] = pd.to_datetime(df_option.load_dt + ' ' + df_option.load_tm)
         fig = make_subplots(specs=[[{"secondary_y": True}]])
-        fig.add_trace(go.Scatter(x=df_option.index, y=df_option.c_Last, mode='lines',line_shape='spline',marker_color='rgb(0,128,0)',opacity=.8))
+        fig.add_trace(go.Scatter(x=df_option.index, y=df_option.c_Last, mode='lines',line_shape='spline',
+                                 name=f'Call {self.strike}/{self.expiry_dt}', marker_color='rgb(0,128,0)',opacity=.8))
         fig.add_trace(go.Scatter(x=df_option.index, y=df_option.p_Last, mode='lines', line_shape='spline',
-                                 marker_color='rgb(128,0,0)', opacity=.8))
+                                 name=f'Put {self.strike}/{self.expiry_dt}', marker_color='rgb(225,0,0)', opacity=.8))
         fig.add_trace(go.Scatter(x=df_option.index, y=df_option.tsla_spot_price, mode='lines', line_shape='spline',
-                                 marker_color='rgb(0,0,0)', opacity=.8),secondary_y=True)
+                                 name=f'TSLA Spot', marker_color='rgb(0,0,0)', opacity=.8),secondary_y=True)
+
+        # [fig.add_vline(x=i,line_width=3,line_color='blue', line_dash='dash') for i in df_option.groupby(df_option.dt.dt.date)['dt'].max()]
         fig.update_layout(
-            title=f"Put Call Price history. [{self.expiry_dt}] @ <b>{self.strike}... </b>",
+            title=f"Put Call Price history. [{self.expiry_dt}] @ <b> [{self.strike}]</b> ... ",
             xaxis_tickfont_size=14,
             height=600, width=1900,
+            showlegend=False,
             hovermode='x',
             xaxis = dict(
                 tickmode='array',

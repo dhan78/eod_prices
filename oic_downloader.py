@@ -497,7 +497,7 @@ app.layout = html.Div([
             {"label": "ShowOptionHistory", "value": "showOptionHistory"},
             # {"label": "Disabled Option", "value": 3, "disabled": True},
         ],
-        value=["showOptionHistory"],
+        value=[""],
         id="switches-input",
         switch=True,
     ),

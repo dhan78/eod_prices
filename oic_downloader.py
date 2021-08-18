@@ -193,18 +193,20 @@ class OptionChart():
         df_option['dt'] = pd.to_datetime(df_option.load_dt + ' ' + df_option.load_tm)
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig.add_trace(go.Scatter(x=df_option.index, y=df_option.c_Last, mode='lines',line_shape='spline',
-                                 name=f'Call {self.strike}/{self.expiry_dt}', marker_color='rgb(0,128,0)',opacity=.8))
+                                 name=f'Call {self.strike}/{self.expiry_dt}', marker_color='rgb(0,128,0)',opacity=.5))
         fig.add_trace(go.Scatter(x=df_option.index, y=df_option.p_Last, mode='lines', line_shape='spline',
-                                 name=f'Put {self.strike}/{self.expiry_dt}', marker_color='rgb(225,0,0)', opacity=.8))
+                                 name=f'Put {self.strike}/{self.expiry_dt}', marker_color='rgb(225,0,0)', opacity=.5))
         fig.add_trace(go.Scatter(x=df_option.index, y=df_option.tsla_spot_price, mode='lines', line_shape='spline',
-                                 name=f'TSLA Spot', marker_color='rgb(0,0,0)', opacity=.8),secondary_y=True)
+                                 name=f'TSLA Spot', marker_color='rgb(0,0,0)', opacity=.3),secondary_y=True)
 
-        # [fig.add_vline(x=i,line_width=3,line_color='blue', line_dash='dash') for i in df_option.groupby(df_option.dt.dt.date)['dt'].max()]
+        for line in df_option.reset_index().groupby('load_dt')['index'].min():
+            fig.add_vline(x=line, line_dash='dash', line_color='black', line_width=.6 )
+
         fig.update_layout(
             title=f"Put Call Price history. [{self.expiry_dt}] @ <b> [{self.strike}]</b> ... ",
             xaxis_tickfont_size=14,
             height=600, width=1900,
-            showlegend=False,
+            showlegend=True,
             hovermode='x',
             xaxis = dict(
                 tickmode='array',
@@ -302,7 +304,7 @@ class Ticker():
         num_or_charts = len(df.expirygroup.unique())
 
         fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, horizontal_spacing=0.06,print_grid=True,specs=[[{"secondary_y": True}, {"secondary_y": True}]]*num_or_charts)
-
+        y_max = df[['c_Openinterest', 'p_Openinterest']].max(axis=1).max() * 1.1
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0],str) else expiry[0]
             df_expiry = expiry[1]
@@ -319,15 +321,15 @@ class Ticker():
             #Put Volume
             fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Volume.values,name='Put Volume_'+expirydt,marker_color='rgb(300,0,0)',opacity=.4, width=.3), row=i + 1, col=1)
             # #Call/Put Ratio
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_p_ratio.values,name='c_p_Ratio'+expirydt,mode='lines',line_shape='spline',marker_color='rgb(0,300,0)',opacity=.7, line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
+            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_p_ratio.values,name='c_p_Ratio '+expirydt,mode='lines',line_shape='spline',marker_color='rgb(0,300,0)',opacity=.7, line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
             # #Put/Call Ratio
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_c_ratio.values,name='p_c_Ratio'+expirydt,mode='lines',line_shape='spline',marker_color='rgb(300,0,0)',opacity=.7, line=dict(color='rgb(255,0,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
+            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_c_ratio.values,name='p_c_Ratio '+expirydt,mode='lines',line_shape='spline',marker_color='rgb(300,0,0)',opacity=.7, line=dict(color='rgb(255,0,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
 
 
             # Current Price
             fig.append_trace(go.Scatter(
                 x=[self.lastSalePrice],
-                y=[6000],
+                y=[y_max*.9],
                 text=[str(self.lastSalePrice)],
                 name="LastTradePrice_"+expirydt,
                 mode="text",
@@ -341,8 +343,9 @@ class Ticker():
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-90)
             title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
-            fig.update_yaxes(title_text=title_text, range=[0, 12000], row=i + 1, col=1,secondary_y=False)
+            fig.update_yaxes(title_text=title_text, range=[0, y_max], row=i + 1, col=1,secondary_y=False)
             fig.update_yaxes(range=[0, 10], row=i + 1, col=1,secondary_y=True)
+            fig.add_vline(x=self.lastSalePrice, line_dash='dash', line_color='black', line_width=.6, row=i + 1, col=1)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             expirydt = expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
@@ -501,11 +504,11 @@ app.layout = html.Div([
         id="switches-input",
         switch=True,
     ),
-    html.Div(id='option-chart-output-id',children=[dcc.Graph(id='option-chart-output', figure ={})],style={'display': 'none'}),
+    html.Div(id='option-chart-output-id',children=[dcc.Loading(dcc.Graph(id='option-chart-output', figure ={}),type='default')],style={'display': 'none'}),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(
         id='interval-component',
-        interval= 30 * 1000,  # in milliseconds
+        interval= 300 * 1000,  # in milliseconds
         n_intervals=0
     )
 
@@ -538,7 +541,10 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
         ctx = dash.callback_context
 
         if ctx.triggered[0]['prop_id'] == 'graph.clickData': # just clicking chart
+            if 'showOptionHistory' not in switch_value : raise dash.exceptions.PreventUpdate # option Toggle is OFF
             curveNum = clickData['points'][0]['curveNumber']
+            curveName = figure['data'][curveNum]['name']
+            if curveName.split()[0] not in ['C','P']: raise dash.exceptions.PreventUpdate # Clicked on Ratio chart
             clickData['points'][0]['curveName'] = figure['data'][curveNum]['name']
             df_click = pd.DataFrame(clickData['points']).dropna(subset=['curveName'])
             df_click['expiry_dt'] = df_click.curveName.apply(lambda x: pd.to_datetime(x.split()[1]).strftime('%b %d'))

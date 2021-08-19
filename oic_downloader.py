@@ -21,21 +21,33 @@ oc = OptionChart(None,None)
 figOption = None
 # {'display':'none'}
 # {'display':'block'}
+content_first_row = dbc.Row(
+    [
+        dbc.Col(
+            [dcc.Input(id="target_close", type="number",debounce=True, placeholder="0",),
+            html.Div(id='slider-output-container',
+                     style={'font-family':'Arial',
+                               'font-size': '15px'}),
+             ], md=2
+        ),
+        dbc.Col(
+            html.Button('Reset Targets', id='reset-val', n_clicks=0), md=2
+        ),
+        dbc.Col(
+            dbc.Checklist(
+                options=[
+                    {"label": "ShowOptionHistory", "value": "showOptionHistory"},
+                    # {"label": "Disabled Option", "value": 3, "disabled": True},
+                ],
+                value=[""],
+                id="switches-input",
+                switch=True,
+            ), md=2
+        )
+    ]
+)
 
-app.layout = html.Div([
-    dcc.Input(id="target_close", type="number",debounce=True, placeholder="0"),
-    html.Div(id='slider-output-container',style={'height':'20px','font-family':'Arial',
-                               'font-size': '12px'}),
-    html.Button('Reset Targets', id='reset-val', n_clicks=0),
-    dbc.Checklist(
-        options=[
-            {"label": "ShowOptionHistory", "value": "showOptionHistory"},
-            # {"label": "Disabled Option", "value": 3, "disabled": True},
-        ],
-        value=[""],
-        id="switches-input",
-        switch=True,
-    ),
+app.layout = html.Div([content_first_row,
     html.Div(id='option-chart-output-id',children=[dcc.Loading(dcc.Graph(id='option-chart-output', figure ={}),type='default')],style={'display': 'none'}),
     dcc.Graph(id='graph', figure=fig),
     dcc.Interval(

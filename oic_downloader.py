@@ -110,7 +110,7 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
             target_close_text = 'Target Closing Price : "{}"'.format(
                 ', '.join([str(i) for i in list(set(tickr.target_close_lst))]))
             return tickr.get_charts(), dash.no_update, target_close_text, get_option_chart_display(switch_value)
-        elif ctx.triggered[0]['prop_id'] == 'switches-input.value':  # triggered by clicking reset button
+        elif ctx.triggered[0]['prop_id'] == 'switches-input.value':  # triggered by option toggle buttn
             return dash.no_update, dash.no_update, dash.no_update, get_option_chart_display(switch_value)
     except:
         e = sys.exc_info()[1]

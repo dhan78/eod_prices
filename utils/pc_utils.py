@@ -31,10 +31,12 @@ import dateutil.parser as dparse
 from datetime import timedelta
 
 next_friday = dparse.parse("Friday")
+next_monday = dparse.parse("Monday")
 one_week = timedelta(days=7)
 weekly_expiry_target = next_friday + one_week * 6
 run_dt_yyyy_mm_dd = datetime.today().strftime('%Y-%m-%d')
 prev_friday=next_friday - one_week
+prev_monday=next_monday - one_week
 prev_friday_yyyy_mm_dd=prev_friday.strftime('%Y-%m-%d')
 
 
@@ -103,6 +105,20 @@ class DB():
 
     def query_sql_data(self,p_sql):
         sql_str = p_sql
+        conn=self.create_connection()
+        cur = conn.cursor()
+        cur.execute(sql_str)
+        ret_rows = cur.fetchall()
+        ret_df = pd.DataFrame.from_dict(ret_rows)
+        ret_df.columns = [description[0] for description in cur.description]
+        return ret_df
+
+    def query_range_data(self,p_expiry, p_load_dt_start, p_load_dt_end):
+        # get last row from previous working day
+        sql_str = f''' select *
+        from tsla_nasdaq where expiryDate = '{p_expiry}' and
+        load_dt >= '{p_load_dt_start}' and load_dt <='{p_load_dt_end}' 
+        order by load_dt desc , load_tm desc '''
         conn=self.create_connection()
         cur = conn.cursor()
         cur.execute(sql_str)
@@ -291,43 +307,63 @@ class Ticker():
 
         return df
 
-    def get_charts(self):
-        _ = self.get_lastSalePrice()
-        df = self.oic_api_call()
+    def get_charts(self, *args, **kwargs):
+
+        if 'replay' not in kwargs.keys():
+            _ = self.get_lastSalePrice()
+            lastSalePrice = self.lastSalePrice
+            df = self.oic_api_call()
+        else:
+            df = kwargs.get('p_df')
+            lastSalePrice = kwargs.get('tsla_spot_price')
 
         if df is None: return None
 
         num_or_charts = len(df.expirygroup.unique())
 
-        fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, horizontal_spacing=0.06,print_grid=True,specs=[[{"secondary_y": True}, {"secondary_y": True}]]*num_or_charts)
+        fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, horizontal_spacing=0.06, print_grid=True,
+                            specs=[[{"secondary_y": True}, {"secondary_y": True}]] * num_or_charts)
         y_max = df[['c_Openinterest', 'p_Openinterest']].max(axis=1).max() * 1.1
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0],str) else expiry[0]
+            expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
             df_expiry = expiry[1]
             df_expiry.sort_values(by=['strike'], inplace=True)
             df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
-            df_expiry['c_p_ratio'] = df_expiry.c_Openinterest/df_expiry.p_Openinterest
-            df_expiry['p_c_ratio'] = df_expiry.p_Openinterest/df_expiry.c_Openinterest
+            df_expiry['c_p_ratio'] = df_expiry.c_Openinterest / df_expiry.p_Openinterest
+            df_expiry['p_c_ratio'] = df_expiry.p_Openinterest / df_expiry.c_Openinterest
             # Call Open Interest
-            fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Openinterest.values, name='Call Open Interest_'+expirydt, marker_color='rgb(0,128,0)',opacity=.8, width=.6), row=i + 1, col=1)
+            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values,
+                                    name='Call Open Interest_' + expirydt, marker_color='rgb(0,128,0)', opacity=.8,
+                                    width=.6), row=i + 1, col=1, )
             # Put Open Interest
-            fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Openinterest.values,name='Put Open Interest_'+expirydt,marker_color='rgb(225, 0, 0)',opacity=.8, width=.6), row=i + 1, col=1)
-            #Call Volume
-            fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.c_Volume.values,name='Call Volume_'+expirydt,marker_color='rgb(0,300,0)',opacity=.4, width=.3), row=i + 1, col=1)
-            #Put Volume
-            fig.append_trace(go.Bar(x=df_expiry.strike.values,y=df_expiry.p_Volume.values,name='Put Volume_'+expirydt,marker_color='rgb(300,0,0)',opacity=.4, width=.3), row=i + 1, col=1)
+            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values,
+                                    name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.8,
+                                    width=.6), row=i + 1, col=1)
+            # Call Volume
+            fig.append_trace(
+                go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Volume.values, name='Call Volume_' + expirydt,
+                       marker_color='rgb(0,300,0)', opacity=.4, width=.3), row=i + 1, col=1)
+            # Put Volume
+            fig.append_trace(
+                go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Volume.values, name='Put Volume_' + expirydt,
+                       marker_color='rgb(300,0,0)', opacity=.4, width=.3), row=i + 1, col=1)
             # #Call/Put Ratio
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_p_ratio.values,name='c_p_Ratio '+expirydt,mode='lines',line_shape='spline',marker_color='rgb(0,300,0)',opacity=.7, line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
+            fig.add_trace(
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_p_ratio.values, name='c_p_Ratio ' + expirydt,
+                           mode='lines', line_shape='spline', marker_color='rgb(0,300,0)', opacity=.7,
+                           line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
             # #Put/Call Ratio
-            fig.add_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_c_ratio.values,name='p_c_Ratio '+expirydt,mode='lines',line_shape='spline',marker_color='rgb(300,0,0)',opacity=.7, line=dict(color='rgb(255,0,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
-
+            fig.add_trace(
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_c_ratio.values, name='p_c_Ratio ' + expirydt,
+                           mode='lines', line_shape='spline', marker_color='rgb(300,0,0)', opacity=.7,
+                           line=dict(color='rgb(255,0,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
 
             # Current Price
             fig.append_trace(go.Scatter(
-                x=[self.lastSalePrice],
-                y=[y_max*.9],
-                text=[str(self.lastSalePrice)],
-                name="LastTradePrice_"+expirydt,
+                x=[lastSalePrice],
+                y=[y_max * .9],
+                text=[str(lastSalePrice)],
+                name="LastTradePrice_" + expirydt,
                 mode="text",
                 opacity=0.7,
                 textfont=dict(
@@ -338,44 +374,51 @@ class Ticker():
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-90)
-            title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
-            fig.update_yaxes(title_text=title_text, range=[0, y_max], row=i + 1, col=1,secondary_y=False)
-            fig.update_yaxes(range=[0, 10], row=i + 1, col=1,secondary_y=True)
-            fig.add_vline(x=self.lastSalePrice, line_dash='dash', line_color='black', line_width=.6, row=i + 1, col=1)
+            title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
+            fig.update_yaxes(title_text=title_text, range=[0, y_max], row=i + 1, col=1, secondary_y=False)
+            fig.update_yaxes(range=[0, 10], row=i + 1, col=1, secondary_y=True)
+            fig.add_vline(x=lastSalePrice, line_dash='dash', line_color='black', line_width=.6, row=i + 1, col=1)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            expirydt = expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
+            expirydt = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
             df_expiry = expiry[1]
             df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
-            df_expiry.sort_values(by=['strike'],inplace=True)
-            df_expiry['c_%']=df_expiry.c_Change*100/(df_expiry.c_Last-df_expiry.c_Change)
-            df_expiry['p_%'] = df_expiry.p_Change*100/ (df_expiry.p_Last - df_expiry.p_Change)
-            df_expiry['c_1']=df_expiry.c_Last-df_expiry.c_Change
+            df_expiry.sort_values(by=['strike'], inplace=True)
+            df_expiry['c_%'] = df_expiry.c_Change * 100 / (df_expiry.c_Last - df_expiry.c_Change)
+            df_expiry['p_%'] = df_expiry.p_Change * 100 / (df_expiry.p_Last - df_expiry.p_Change)
+            df_expiry['c_1'] = df_expiry.c_Last - df_expiry.c_Change
             df_expiry['p_1'] = df_expiry.p_Last - df_expiry.p_Change
 
             # Call price Change (Theta decay)
-            #fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_Change'].values, hovertemplate='%{y:.2f}', name='C Decay' + expirydt, marker_color='rgb(0,150,0)', opacity=.8, width=.3), row=i + 1, col=2)
+            # fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['c_Change'].values, hovertemplate='%{y:.2f}', name='C Decay' + expirydt, marker_color='rgb(0,150,0)', opacity=.8, width=.3), row=i + 1, col=2)
             # Put Price Change (Theta decay)
-            #fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_Change'].values, hovertemplate='%{y:.2f}', name='P Decay' + expirydt, marker_color='rgb(255,0,0)', opacity=.8, width=.3), row=i + 1, col=2)
+            # fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_Change'].values, hovertemplate='%{y:.2f}', name='P Decay' + expirydt, marker_color='rgb(255,0,0)', opacity=.8, width=.3), row=i + 1, col=2)
             # Call prices
-            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_Last.values, name='C '+expirydt, mode='lines',line_shape='spline',marker_color='rgb(0,128,0)',opacity=.8), row=i + 1, col=2)
+            fig.append_trace(
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Last.values, name='C ' + expirydt, mode='lines',
+                           line_shape='spline', marker_color='rgb(0,128,0)', opacity=.8), row=i + 1, col=2)
             # Put prices
-            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_Last.values, name='P '+expirydt, mode='lines',line_shape='spline', marker_color='rgb(225,0,0)',opacity=.8), row=i + 1, col=2)
+            fig.append_trace(
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Last.values, name='P ' + expirydt, mode='lines',
+                           line_shape='spline', marker_color='rgb(225,0,0)', opacity=.8), row=i + 1, col=2)
             # Call prices (t-1)
-            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.c_1.values,  name='C-1 ' + expirydt, mode ='lines',line_shape='spline',marker_color='rgb(6, 171, 39)',opacity=.8, line=dict(color='rgb(0,128,0)', width=1, dash='dot')), row=i + 1, col=2)
+            fig.append_trace(
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_1.values, name='C-1 ' + expirydt, mode='lines',
+                           line_shape='spline', marker_color='rgb(6, 171, 39)', opacity=.8,
+                           line=dict(color='rgb(0,128,0)', width=1, dash='dot')), row=i + 1, col=2)
             # Put prices (t-1)
-            fig.append_trace(go.Scatter(x=df_expiry.strike.values,y=df_expiry.p_1.values,  name='P-1 ' + expirydt, mode='lines',line_shape='spline',marker_color='rgb(350,0,0)',opacity=.8,line=dict(color='rgb(255,0,0)', width=1, dash='dot')), row=i + 1, col=2)
+            fig.append_trace(
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_1.values, name='P-1 ' + expirydt, mode='lines',
+                           line_shape='spline', marker_color='rgb(350,0,0)', opacity=.8,
+                           line=dict(color='rgb(255,0,0)', width=1, dash='dot')), row=i + 1, col=2)
 
-
-
-
-            fig.add_vline(x=self.lastSalePrice, line_dash='dash',line_color='black',line_width=.6, row=i + 1, col=2)
+            fig.add_vline(x=lastSalePrice, line_dash='dash', line_color='black', line_width=.6, row=i + 1, col=2)
             # Current price
             fig.append_trace(go.Scatter(
-                x=[self.lastSalePrice],
-                y=[50-i*5],
-                text=[str(self.lastSalePrice)],
-                name="LastTradePrice_"+expirydt,
+                x=[lastSalePrice],
+                y=[50 - i * 5],
+                text=[str(lastSalePrice)],
+                name="LastTradePrice_" + expirydt,
                 mode="text",
                 opacity=0.7,
                 textfont=dict(
@@ -384,18 +427,17 @@ class Ticker():
                 )
             ), row=i + 1, col=2)
 
-
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-90)
-            title_text=expiry[0] if isinstance(expiry[0],str) else expiry[0].strftime('%B-%d-%Y')
-            fig.update_yaxes(title_text=title_text, range=[-15, 60], row=i + 1, col=2) #,ticksuffix="%")
+            title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
+            fig.update_yaxes(title_text=title_text, range=[0, 60], row=i + 1, col=2)  # ,ticksuffix="%")
 
         fig.update_layout(
             title=f"Put Call Open Interest. [{self.dataSource}] @ <b>{datetime.today().strftime('%I:%M %p')}... {self.marketStatus}</b>",
             xaxis_tickfont_size=14,
-            height=1800, width=1900,
+            height=300 * num_or_charts, width=1900,
             showlegend=False,
-            title_font_size= 14,
+            title_font_size=14,
             legend=dict(
                 x=0,
                 y=1.0,
@@ -408,9 +450,9 @@ class Ticker():
             bargroupgap=0.1,  # gap between bars of the same location coordinate.
             # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour
         )
-        #Save df & fig for future updates
+        # Save df & fig for future updates
         self.df, self.fig = df, fig
-        self.target_close_lst = list(dict.fromkeys(self.target_close_lst)) # dedupe list
+        self.target_close_lst = list(dict.fromkeys(self.target_close_lst))  # dedupe list
         self.predict()
         return self.fig
 
@@ -473,3 +515,65 @@ class Ticker():
                            line_shape='spline', marker_color='rgb(121, 8, 3 )', opacity=.7, line=dict(color='rgb(121, 8, 3 )', width=1, )), row = i + 1, col = 2)
 
         return self.fig
+
+    def create_history_fig(self):
+        prev_monday, prev_friday = dparse.parse('Monday') - one_week, dparse.parse('Friday') - one_week
+        prev_friday_short = prev_friday.strftime('%b %d')
+        df = db.query_range_data(p_expiry=prev_friday_short
+                                 , p_load_dt_start=prev_monday
+                                 , p_load_dt_end=prev_friday
+                                 )
+        df['expirygroup'] = pd.to_datetime('2021 ' + df.expiryDate)
+        df.sort_values(by=['load_dt','load_tm'],inplace=True)
+
+        ##############################################################################
+        frame_list, sliders_dict = [], {'steps': []}
+        for i, dfi in df.groupby(['load_dt', 'load_tm']):
+            tsla_spot_price = dfi.tsla_spot_price.values[0]
+            fig_i = self.get_charts(replay=True, p_df=dfi, tsla_spot_price=tsla_spot_price)
+            #     import pdb; pdb.set_trace()
+
+            dt_time = pd.to_datetime(f'{dfi.load_dt.values[0]} {dfi.load_tm.values[0]}').strftime(
+                '%m-%d, %A,  %-I:%M %p')
+            fig_i['layout']['title'] = f'As of {dt_time}'
+            fig_i.layout.update(dict(yaxis=dict(range=[0,50000])))
+            fig_i.layout.update(dict(yaxis2=dict(range=[0, 10])))
+            frame_list.append(go.Frame(data=fig_i.data, layout=fig_i.layout))
+            slider_step = {"args": [
+                [i[0] + i[1]],
+                {"frame": {"duration": 300, "redraw": False},
+                 "mode": "immediate",
+                 "transition": {"duration": 300}}
+            ],
+                "label": i[0] + i[1],
+                "method": "animate"}
+            sliders_dict["steps"].append(slider_step)
+
+        ##############################################################################
+        fig = make_subplots(rows=1, cols=2, vertical_spacing=0.03, horizontal_spacing=0.06, print_grid=True,
+                            specs=[[{"secondary_y": True}, {"secondary_y": True}]] * 1);
+        fig.frames = frame_list
+        # animation needs first frame to mimic final layout. hence the following line
+        df_i = df.sort_values(by=['load_dt', 'load_tm']).groupby('load_dt').tail(1)
+        fig.add_traces(self.get_charts(replay=True, p_df=df_i).data);
+        fig.layout = go.Layout(
+            # width=1500, height=700,
+            xaxis=dict(range=[600, 750], autorange=False),
+            xaxis2=dict(range=[600, 750], autorange=False),
+            yaxis=dict(range=[0, 50000], autorange=False),
+            yaxis2=dict(range=[0, 10], autorange=False),
+            yaxis3=dict(range=[0, 60], autorange=False),
+            yaxis4=dict(range=[0, 60], autorange=False),
+            title="Replay previous Week",
+            updatemenus=[dict(
+                type="buttons",
+                buttons=[dict(label="Play",
+                              method="animate",
+                              args=[None])])],
+
+        )
+        # fig["layout"]["sliders"] = [sliders_dict]
+        # fig.update_layout(sliders=[sliders_dict])
+        ##############################################################################
+
+        return fig

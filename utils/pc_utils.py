@@ -556,7 +556,7 @@ class Ticker():
                             specs=[[{"secondary_y": True}, {"secondary_y": True}]] * 1);
         fig.frames = frame_list
         # animation needs first frame to mimic final layout. hence the following line
-        df_i = df.sort_values(by=['load_dt', 'load_tm']).groupby('load_dt').tail(1)
+        df_i = df.sort_values(by=['load_dt', 'load_tm']).groupby('load_dt').head(1)
         fig.add_traces(self.get_charts(replay=True, p_df=df_i).data);
         fig.layout = go.Layout(
             # width=1500, height=700,

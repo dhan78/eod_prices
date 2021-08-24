@@ -49,8 +49,17 @@ content_first_row = dbc.Row(
 
 app.layout = html.Div([content_first_row,
     html.Div(id='option-chart-output-id',children=[dcc.Loading(dcc.Graph(id='option-chart-output', figure ={}),type='default')],style={'display': 'none'}),
-    html.Div(id='replay-history-output-id',children=[html.Button('Build History', id='replay-history', n_clicks=0),
-                                                    dcc.Loading(dcc.Graph(id='replay-history-output', figure ={}),type='default')],style={'display': 'none'}),
+    html.Div(id='replay-history-output-id',children=[
+                                                    dcc.DatePickerRange( id='date_picker',
+                                                        minimum_nights=4,
+                                                        clearable=True,
+                                                        with_portal=True,
+                                                        start_date=prev_monday,
+                                                        end_date=prev_friday
+                                                    ),
+                                                    html.Button('Build History', id='replay-history', n_clicks=0),
+                                                    dcc.Loading(dcc.Graph(id='replay-history-output', figure ={}),type='default')
+                                                    ],style={'display': 'none'}),
     html.Div(dcc.Graph(id='graph', figure=fig),),
     dcc.Interval(
         id='interval-component',
@@ -81,10 +90,12 @@ def get_option_chart_display(p_switch_value,p_DivName):
      Input('replay-history','n_clicks')
      ],
     [State('graph','figure'),State('target_close','value'),
+     State('date_picker','start_date'),State('date_picker','end_date'),
      ],
     prevent_initial_call=True
 )
-def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,switch_value, replay_history, figure,target_close):
+def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,switch_value, replay_history, figure,target_close,
+                       start_date,end_date):
     tickr.target_close_lst.append(target_close)
     target_close_text = 'Target Closing Price (Modeled) : "{}"'.format(', '.join([str(i) for i in list(set(tickr.target_close_lst)) if i]))
 
@@ -120,7 +131,7 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
         elif ctx.triggered[0]['prop_id'] == 'switches-input.value':  # triggered by option toggle buttn
             return dash.no_update, dash.no_update, dash.no_update, get_option_chart_display(switch_value,'showOptionHistory'),get_option_chart_display(switch_value,'ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'replay-history.n_clicks':  # triggered by clicking Build History
-            fig = tickr.create_history_fig()
+            fig = tickr.create_history_fig(start_date,end_date)
             return dash.no_update, dash.no_update, dash.no_update, get_option_chart_display(switch_value,'showOptionHistory'), get_option_chart_display(switch_value, 'ReplayHistory'),fig
     except:
         e = sys.exc_info()[1]

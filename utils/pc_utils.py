@@ -516,8 +516,9 @@ class Ticker():
 
         return self.fig
 
-    def create_history_fig(self):
-        prev_monday, prev_friday = dparse.parse('Monday') - one_week, dparse.parse('Friday') - one_week
+    def create_history_fig(self,p_start_date,p_end_date):
+        # prev_monday, prev_friday = dparse.parse('Monday') - one_week, dparse.parse('Friday') - one_week
+        prev_monday, prev_friday = pd.to_datetime(p_start_date),pd.to_datetime(p_end_date)
         prev_friday_short = prev_friday.strftime('%b %d')
         df = db.query_range_data(p_expiry=prev_friday_short
                                  , p_load_dt_start=prev_monday
@@ -525,6 +526,7 @@ class Ticker():
                                  )
         df['expirygroup'] = pd.to_datetime('2021 ' + df.expiryDate)
         df.sort_values(by=['load_dt','load_tm'],inplace=True)
+        strike_min, strike_max = df.strike.values.min(),df.strike.values.max()
 
         ##############################################################################
         frame_list, sliders_dict = [], {'steps': []}
@@ -558,8 +560,8 @@ class Ticker():
         fig.add_traces(self.get_charts(replay=True, p_df=df_i).data);
         fig.layout = go.Layout(
             # width=1500, height=700,
-            xaxis=dict(range=[600, 750], autorange=False),
-            xaxis2=dict(range=[600, 750], autorange=False),
+            xaxis=dict(range=[strike_min, strike_max], autorange=False),
+            xaxis2=dict(range=[strike_min, strike_max], autorange=False),
             yaxis=dict(range=[0, 50000], autorange=False),
             yaxis2=dict(range=[0, 10], autorange=False),
             yaxis3=dict(range=[0, 60], autorange=False),

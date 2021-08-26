@@ -143,4 +143,4 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
 
 
 
-app.run_server(debug=True, host='0.0.0.0')  # Turn off reloader if inside Jupyter
+app.run_server(debug=True, host='0.0.0.0',threaded=True)  # Turn off reloader if inside Jupyter

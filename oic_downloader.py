@@ -1,3 +1,4 @@
+import functools
 
 from utils.pc_utils import *
 
@@ -98,7 +99,7 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
                        start_date,end_date):
     tickr.target_close_lst.append(target_close)
     target_close_text = 'Target Closing Price (Modeled) : "{}"'.format(', '.join([str(i) for i in list(set(tickr.target_close_lst)) if i]))
-
+    toggle_display=functools.partial(get_option_chart_display,switch_value)
     try:
         ctx = dash.callback_context
 
@@ -111,28 +112,30 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
             df_click = pd.DataFrame(clickData['points']).dropna(subset=['curveName'])
             df_click['expiry_dt'] = df_click.curveName.apply(lambda x: pd.to_datetime(x.split()[1]).strftime('%b %d'))
             oc = OptionChart(df_click.expiry_dt,df_click.x)
-            return tickr.fig,oc.generate_fig(),target_close_text, get_option_chart_display(switch_value,'showOptionHistory'),get_option_chart_display(switch_value,'ReplayHistory'),dash.no_update
+            return tickr.fig,oc.generate_fig(),target_close_text, toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals': # triggered by timer
             tickr.get_lastSalePrice()
+            # if tickr.state == OIC_State.RUNNING:
+            print (f'Previous call status: {tickr.state}')
             if tickr.marketStatus == 'Market Closed': raise dash.exceptions.PreventUpdate()
 
-            return tickr.get_charts(),dash.no_update,target_close_text,get_option_chart_display(switch_value,'showOptionHistory'),get_option_chart_display(switch_value,'ReplayHistory'),dash.no_update
+            return tickr.get_charts(),dash.no_update,target_close_text,toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'target_close.value': # triggered by changing target_close
             tickr.target_close = target_close
             tickr.get_lastSalePrice()
             tickr.predict()
-            return tickr.fig, dash.no_update,target_close_text, get_option_chart_display(switch_value,'showOptionHistory'),get_option_chart_display(switch_value,'ReplayHistory'),dash.no_update
+            return tickr.fig, dash.no_update,target_close_text, toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'reset-val.n_clicks': # triggered by clicking reset button
             tickr.target_close_lst , tickr.target_close = [], None
             tickr.dict_target = {}
             target_close_text = 'Target Closing Price : "{}"'.format(
                 ', '.join([str(i) for i in list(set(tickr.target_close_lst))]))
-            return tickr.get_charts(), dash.no_update, target_close_text, get_option_chart_display(switch_value,'showOptionHistory'),get_option_chart_display(switch_value,'ReplayHistory'),dash.no_update
+            return tickr.get_charts(), dash.no_update, target_close_text, toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'switches-input.value':  # triggered by option toggle buttn
-            return dash.no_update, dash.no_update, dash.no_update, get_option_chart_display(switch_value,'showOptionHistory'),get_option_chart_display(switch_value,'ReplayHistory'),dash.no_update
+            return dash.no_update, dash.no_update, dash.no_update, toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'replay-history.n_clicks':  # triggered by clicking Build History
             fig = tickr.create_history_fig(start_date,end_date)
-            return dash.no_update, dash.no_update, dash.no_update, get_option_chart_display(switch_value,'showOptionHistory'), get_option_chart_display(switch_value, 'ReplayHistory'),fig
+            return dash.no_update, dash.no_update, dash.no_update, toggle_display('showOptionHistory'), toggle_display( 'ReplayHistory'),fig
     except:
         e = sys.exc_info()[1]
         print (traceback.print_exc())

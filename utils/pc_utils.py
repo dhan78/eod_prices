@@ -19,12 +19,18 @@ import re
 import requests_cache
 import random
 import pandas as pd
+from enum import Enum, auto
+import time
 
 def get_yahoo_session():
     session = requests_cache.CachedSession('yfinance.cache')
     session.headers['User-agent'] = 'my-x1carbon/1.02' + str(random.random())
     return session
 
+
+class OIC_State(Enum):
+    IDLE = auto()
+    RUNNING = auto()
 
 
 import dateutil.parser as dparse
@@ -252,6 +258,10 @@ class Ticker():
         self.target_close_lst = [self.target_close]
         self.df, self.fig = None, None
         self.dict_target={}
+        self.state = OIC_State.IDLE
+
+    def set_state(self, state:OIC_State):
+        self.state = state
 
     def get_lastSalePrice(self): #Realtime price
         url = f'https://api.nasdaq.com/api/quote/{self.ticker}/info?assetclass=stocks'
@@ -308,7 +318,7 @@ class Ticker():
         return df
 
     def get_charts(self, *args, **kwargs):
-
+        self.set_state(OIC_State.RUNNING)
         if 'replay' not in kwargs.keys():
             _ = self.get_lastSalePrice()
             lastSalePrice = self.lastSalePrice
@@ -454,6 +464,7 @@ class Ticker():
         self.df, self.fig = df, fig
         self.target_close_lst = list(dict.fromkeys(self.target_close_lst))  # dedupe list
         self.predict()
+        self.set_state(OIC_State.IDLE)
         return self.fig
 
     def predict(self):

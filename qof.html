@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Bootstrap 4 Introduction</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+    <style>
+        body {
+            margin: 30px;
+        }
+        .lockers {
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+
+        }
+
+        .side-column {
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          width: 96px;
+          font-size: 10px;
+          font-weight: 60;
+
+        }
+
+        .locker-column {
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          width: 300px;
+          font-size: 10px;
+          font-weight: 60;
+
+        }
+        .signal-column {
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          width: 50px;
+          #border: 1px dotted blue;
+        }
+
+        .locker {
+          display: flex;
+          align-items: center;
+          justify-content: left;
+          font-size: 12px;
+          #text-decoration: underline;
+          font-weight: 60;
+          #text-transform: uppercase;
+          padding-left: 0.5em;
+        }
+
+        .large {
+          background-color: yellow;
+          #color: red;
+          height: 100px;
+        }
+
+        .small {
+          #background-color: blue;
+          #color: white;
+          height: 30px;
+          #border: 1px dotted black;
+
+        }
+
+        .medium {
+          background-color: green;
+          #color: red;
+          height: 50px;
+        }
+
+        .header {
+          background-color: White;
+          color: black;
+          height: 30px;
+          font-weight: 600;
+          border-bottom: 0.05rem solid;
+        }
+
+        .oc {
+          #color: red;
+          text-decoration: none;
+          height: 150px;
+          border: 1px blue;
+          align-items: center;
+          background-color: #d5dba4;
+          font-weight: 600;
+
+        }
+
+        .ctngcy {
+          #color: red;
+          text-decoration: none;
+          height: 120px;
+          #border: 1px dotted blue;
+          align-items: center;
+          font-weight: 600;
+        }
+        .dsc {
+          #color: red;
+          text-decoration: none;
+          height: 90px;
+          #border: 1px dotted blue;
+          align-items: center;
+          font-weight: 600;
+        }
+        .fccr {
+          #color: red;
+          text-decoration: none;
+          height: 90px;
+          #border: 1px dotted blue;
+          align-items: center;
+          font-weight: 600;
+        }
+        .dgreen{
+        background-color: #d5dba4;
+        }
+        .lgreen {
+        background-color: #eaedd2;
+        }
+        .dblue{
+        background-color: #b5d2e5;
+        }
+        .lblue{
+        background-color: #dae9f2;
+        }
+        .dgrey{
+        background-color: #c5c5c3;
+        }
+        .lgrey{
+        background-color: #f2f2f2;
+        }
+        .dpurple{
+        background-color: #bbb8d8;
+        }
+        .lpurple{
+        background-color: #dddbeb;
+        }
+
+
+
+
+    </style>
+</head>
+
+<body>
+<div class="lockers">
+  <div class="side-column">
+    <div class="header locker">Theme</div>
+    <div class="oc locker dgreen">Operating Characteristics</div>
+    <div class="ctngcy locker dblue">Contingency</div>
+    <div class="dsc locker dgrey">DSC Analysis</div>
+    <div class="fccr locker dpurple">FCCR Analysis</div>
+  </div>
+  <div class="locker-column">
+    <div class="header locker">Topics</div>
+    <div class="small locker ">Market Share</div>
+    <div class="small locker lgreen">Product Concentration</div>
+    <div class="small locker ">Customer Concentration</div>
+    <div class="small locker lgreen">Competitive Position</div>
+    <div class="small locker ">Revenue Trend</div>
+
+    <div class="small locker lblue">Cash Flow obligations</div>
+    <div class="small locker">Legal Proceedings</div>
+    <div class="small locker lblue">Lawsuit Potential</div>
+    <div class="small locker">Other Material impact contingencies</div>
+
+    <div class="small locker lgrey">Distributions</div>
+    <div class="small locker">DSC</div>
+    <div class="small locker lgrey">Cash Flow DSC</div>
+
+    <div class="small locker">Balance Sheet Leverage</div>
+    <div class="small locker lpurple">FCCR</div>
+    <div class="small locker">Cash Flow FCCR</div>
+
+  </div>
+  <div class="locker-column">
+    <div class="header locker">Description</div>
+    <div class="small locker">Market share of client within industry/geographic location</div>
+    <div class="small locker lgreen">High % of revenues from small % of products/services</div>
+    <div class="small locker">High % of revenues from small % of customers</div>
+    <div class="small locker lgreen">Competitive positioning within industry/geographic location</div>
+    <div class="small locker">Revenue Growth relative to previous cycle</div>
+
+    <div class="small locker lblue">Off Balance sheet cash flow obligations</div>
+    <div class="small locker">Ongoing Legal proceedings with significant impact (positive or negative)</div>
+    <div class="small locker lblue">Product prone to Potential for lawsuits</div>
+    <div class="small locker">Any other material non provisioned issue</div>
+    <div class="small locker lgrey">Distributions for Taxes/Debt servicing/ESOP relative to revenue</div>
+    <div class="small locker">DSCR Metric</div>
+    <div class="small locker lgrey">Cash Flow relative to Debt Servicing</div>
+    <div class="small locker">(Total Liabilities)/TNW</div>
+    <div class="small locker lpurple">FCCR Metric</div>
+    <div class="small locker">Cash Flow relative to Interest expense / Fixed Charge Coverage</div>
+
+</div>
+  <div class="signal-column">
+    <div class="header locker">Pos.</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgreen">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lblue">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lblue">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+     <div class="small locker">+</div>
+    <div class="small locker lpurple">+</div>
+    <div class="small locker">+</div>
+   </div>
+  <div class="signal-column">
+    <div class="header locker">Neut.</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgreen">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lblue">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lblue">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+     <div class="small locker">+</div>
+    <div class="small locker lpurple">+</div>
+    <div class="small locker">+</div>
+
+  </div>
+  <div class="signal-column">
+    <div class="header locker">Neg.</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgreen">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lblue">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lblue">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+    <div class="small locker">+</div>
+    <div class="small locker lgrey">+</div>
+     <div class="small locker">+</div>
+    <div class="small locker lpurple">+</div>
+    <div class="small locker">+</div>
+   </div>
+
+  <div class="signal-column">
+    <div class="header locker">Notes</div>
+    <div class="small locker">Note</div>
+    <div class="small locker lgreen">Note</div>
+    <div class="small locker">Note</div>
+    <div class="small locker lgrey">Note</div>
+    <div class="small locker">Note</div>
+    <div class="small locker lblue">Note</div>
+    <div class="small locker">Note</div>
+    <div class="small locker lblue">Note</div>
+    <div class="small locker">Note</div>
+    <div class="small locker lgrey">Note</div>
+    <div class="small locker">Note</div>
+    <div class="small locker lgrey">Note</div>
+     <div class="small locker">Note</div>
+    <div class="small locker lpurple">Note</div>
+    <div class="small locker">Note</div>
+   </div>
+
+</div>
+
+</div>
+</body>

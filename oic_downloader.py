@@ -124,7 +124,7 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
             tickr.target_close = target_close
             tickr.get_lastSalePrice()
             tickr.predict()
-            return tickr.get_charts(), dash.no_update,target_close_text, toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
+            return tickr.fig, dash.no_update,target_close_text, toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'reset-val.n_clicks': # triggered by clicking reset button
             tickr.target_close_lst , tickr.target_close = [], None
             tickr.dict_target = {}

@@ -337,8 +337,8 @@ class Ticker():
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
             df_expiry = expiry[1]
-            df_expiry.sort_values(by=['strike'], inplace=True)
             df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
+            df_expiry.sort_values(by='strike', inplace=True)
             df_expiry['c_p_ratio'] = df_expiry.c_Openinterest / df_expiry.p_Openinterest
             df_expiry['p_c_ratio'] = df_expiry.p_Openinterest / df_expiry.c_Openinterest
             # Call Open Interest

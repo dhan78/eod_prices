@@ -135,7 +135,7 @@ class DB():
 
 
 PATH = pathlib.Path(__file__).parent
-DATA_PATH = PATH.joinpath("../").resolve()
+DATA_PATH = PATH.joinpath("../data").resolve()
 db=DB(db_file=DATA_PATH.joinpath('data_store.sqlite'))
 
 

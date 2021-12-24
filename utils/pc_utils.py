@@ -230,7 +230,7 @@ class OptionChart():
                 tickmode='array',
                 tickvals=df_option.index,
                 ticktext=df_option['dt'].apply(lambda x: x.strftime('%b %d %H:%M')),
-                tickangle = -90,
+                tickangle = -60,
                 tickfont = dict(
                             size=10,
                             color="blue"
@@ -383,7 +383,7 @@ class Ticker():
             ), row=i + 1, col=1)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-90)
+            fig.update_xaxes(row=i + 1, col=1, dtick=5, tickangle=-90)
             title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, y_max], row=i + 1, col=1, secondary_y=False)
             fig.update_yaxes(range=[0, 10], row=i + 1, col=1, secondary_y=True)
@@ -438,13 +438,13 @@ class Ticker():
             ), row=i + 1, col=2)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-90)
+            fig.update_xaxes(row=i + 1, col=2, dtick=5, tickangle=-90)
             title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, 60], row=i + 1, col=2)  # ,ticksuffix="%")
 
         fig.update_layout(
             title=f"Put Call Open Interest. [{self.dataSource}] @ <b>{datetime.today().strftime('%I:%M %p')}... {self.marketStatus}</b>",
-            xaxis_tickfont_size=14,
+            xaxis_tickfont_size=12,
             height=300 * num_or_charts, width=1900,
             showlegend=False,
             title_font_size=14,

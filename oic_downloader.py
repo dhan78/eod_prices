@@ -107,7 +107,7 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
             if 'showOptionHistory' not in switch_value : raise dash.exceptions.PreventUpdate # option Toggle is OFF
             curveNum = clickData['points'][0]['curveNumber']
             curveName = figure['data'][curveNum]['name']
-            if curveName.split()[0] not in ['C','P']: raise dash.exceptions.PreventUpdate # Clicked on Ratio chart
+            if curveName.split()[0][0] not in ['C','P']: raise dash.exceptions.PreventUpdate # Clicked on Ratio chart
             clickData['points'][0]['curveName'] = figure['data'][curveNum]['name']
             df_click = pd.DataFrame(clickData['points']).dropna(subset=['curveName'])
             df_click['expiry_dt'] = df_click.curveName.apply(lambda x: pd.to_datetime(x.split()[1]).strftime('%b %d'))

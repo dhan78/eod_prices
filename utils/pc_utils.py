@@ -135,7 +135,7 @@ class DB():
 
 
 PATH = pathlib.Path(__file__).parent
-DATA_PATH = PATH.joinpath("../data").resolve()
+DATA_PATH = PATH.joinpath("../").resolve()
 db=DB(db_file=DATA_PATH.joinpath('data_store.sqlite'))
 
 
@@ -274,11 +274,17 @@ class Ticker():
         return lastSalePrice
 
     def get_prevBusDay(self):
-        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/historical?assetclass=stocks&fromdate={prev_friday_yyyy_mm_dd}&limit=1&todate={run_dt_yyyy_mm_dd}'
-        # url = 'https://api.nasdaq.com/api/quote/TSLA/realtime-trades?&limit=10&fromTime=00:00'
-        response = requests.get(url, headers=get_headers())
-        lastBusDay = response.json()['data']['tradesTable']['rows'][0]['date']
-        self.lastBusDay_yyyy_mm_dd=pd.to_datetime(lastBusDay).strftime('%Y-%m-%d')
+        try:
+            url = f'https://api.nasdaq.com/api/quote/{self.ticker}/historical?assetclass=stocks&fromdate={prev_friday_yyyy_mm_dd}&limit=1&todate={run_dt_yyyy_mm_dd}'
+            response = requests.get(url, headers=get_headers())
+            lastBusDay = response.json()['data']['tradesTable']['rows'][0]['date']
+            self.lastBusDay_yyyy_mm_dd = pd.to_datetime(lastBusDay).strftime('%Y-%m-%d')
+        except Exception as e:
+            url = f'https://api.nasdaq.com/api/quote/{self.ticker}/info?assetclass=stocks'
+            response = requests.get(url, headers=get_headers())
+            self.lastBusDay_yyyy_mm_dd = pd.to_datetime(response.json()['data']['secondaryData']['lastTradeTimestamp'].split('ON')[1]).strftime(
+                '%Y-%m-%d')
+
 
 # prev_bus_day_closing price: https://api.nasdaq.com/api/quote/TSLA/historical?assetclass=stocks&fromdate=2021-06-06&limit=1&todate=2021-07-06
 

@@ -16,7 +16,7 @@ app = dash.Dash('Foo', external_stylesheets=[dbc.themes.BOOTSTRAP])
 # app = dash.Dash()
 tickr = Ticker('TSLA')
 # current_price = tickr.get_lastSalePrice()
-fig = tickr.get_charts()
+fig = tickr.get_charts(show_volume=True)
 oc = OptionChart(None,None)
 figOption = None
 # {'display':'none'}

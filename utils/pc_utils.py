@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import simplejson as json
 import re
-import requests_cache
+#import requests_cache
 import random
 import pandas as pd
 from enum import Enum, auto
@@ -135,7 +135,7 @@ class DB():
 
 
 PATH = pathlib.Path(__file__).parent
-DATA_PATH = PATH.joinpath("../").resolve()
+DATA_PATH = PATH.joinpath("../data").resolve()
 db=DB(db_file=DATA_PATH.joinpath('data_store.sqlite'))
 
 
@@ -325,6 +325,7 @@ class Ticker():
 
     def get_charts(self, *args, **kwargs):
         self.set_state(OIC_State.RUNNING)
+
         if 'replay' not in kwargs.keys():
             _ = self.get_lastSalePrice()
             lastSalePrice = self.lastSalePrice
@@ -335,6 +336,29 @@ class Ticker():
 
         if df is None: return None
 
+        # convert numeric columns before manipulation.
+        df[df.filter(regex='c_|p_|strike').columns] = df.filter(regex='c_|p_|strike').apply(pd.to_numeric,
+                                                                                            errors='coerce')
+        if kwargs.get('show_volume'):
+            try:
+                # run_dt_yyyy_mm_dd='2022-01-07'
+                df_vol = db.query_sql_data(
+                    f"with st_tm as (select min(load_tm) as tm from tsla_nasdaq where load_dt = '{run_dt_yyyy_mm_dd}')select * from st_tm, tsla_nasdaq where load_dt = '{run_dt_yyyy_mm_dd}' and load_tm = st_tm.tm")
+                df_vol['p_Volume_1'] = pd.to_numeric(df_vol['p_Volume'].astype(str), errors='coerce').fillna(0)
+                df_vol['c_Volume_1'] = pd.to_numeric(df_vol['c_Volume'].astype(str), errors='coerce').fillna(0)
+
+                df = df.merge(df_vol[['expiryDate', 'strike', 'p_Volume_1', 'c_Volume_1']], left_on=['expiryDate', 'strike'],
+                         right_on=['expiryDate', 'strike'], )
+                df['c_Volume_1'] = df['c_Volume'] - df['c_Volume_1']
+                df['p_Volume_1'] = df['p_Volume'] - df['p_Volume_1']
+            except Exception as e:
+                print ('Exception in show_volume section')
+                print ('*'*10, e)
+
+        if 'c_Volume_1' not in df.columns:
+            df['c_Volume_1'] = df['c_Volume']
+            df['p_Volume_1'] = df['p_Volume']
+
         num_or_charts = len(df.expirygroup.unique())
 
         fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, horizontal_spacing=0.06, print_grid=True,
@@ -343,7 +367,7 @@ class Ticker():
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
             df_expiry = expiry[1]
-            df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
+            # df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
             df_expiry.sort_values(by='strike', inplace=True)
             df_expiry['c_p_ratio'] = df_expiry.c_Openinterest / df_expiry.p_Openinterest
             df_expiry['p_c_ratio'] = df_expiry.p_Openinterest / df_expiry.c_Openinterest
@@ -356,13 +380,27 @@ class Ticker():
                                     name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.8,
                                     width=.6), row=i + 1, col=1)
             # Call Volume
+            # fig.append_trace(
+            #     go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Volume.values, name='Call Volume_' + expirydt,
+            #            marker_color='rgb(0,300,0)', opacity=.4, width=.3), row=i + 1, col=1)
             fig.append_trace(
-                go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Volume.values, name='Call Volume_' + expirydt,
-                       marker_color='rgb(0,300,0)', opacity=.4, width=.3), row=i + 1, col=1)
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Volume.values/2, mode='markers',
+                           name='Call Volume_' + expirydt,
+                           marker=dict(size=[max(z/500,0) for z in df_expiry.c_Volume_1.fillna(0).values],
+                                       color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.5, ),
+                row=i + 1, col=1)
             # Put Volume
+            # fig.append_trace(
+            #     go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Volume.values, name='Put Volume_' + expirydt,
+            #            marker_color='rgb(300,0,0)', opacity=.4, width=.3), row=i + 1, col=1)
             fig.append_trace(
-                go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Volume.values, name='Put Volume_' + expirydt,
-                       marker_color='rgb(300,0,0)', opacity=.4, width=.3), row=i + 1, col=1)
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Volume.values/2, mode='markers',
+                           name='Call Volume_' + expirydt,
+                           marker=dict(size=[max(z/500,0) for z in df_expiry.p_Volume_1.fillna(0).values],
+                                       color=['rgb(300,0,0)'] * len(df_expiry.c_Volume.values)), opacity=.5, ),
+                row=i + 1, col=1)
+
+
             # #Call/Put Ratio
             fig.add_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_p_ratio.values, name='c_p_Ratio ' + expirydt,

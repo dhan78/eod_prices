@@ -1,0 +1,3 @@
+fastai Transform explanation: https://www.youtube.com/watch?v=GcMGchBJeXk&t=406s
+
+fastai Pipeline explanation: https://youtu.be/8i9bo5wLSE4?t=644

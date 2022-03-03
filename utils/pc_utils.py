@@ -5,6 +5,8 @@ import sys
 import traceback
 from sqlite3 import Error
 import datetime as dt
+
+#import requests_cache
 import yfinance as yf
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score

@@ -6,12 +6,13 @@ import dash
 from dash import dcc,html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
+from itertools import count
+import flask
 
 
 
 
-
-
+counter = count()
 app = dash.Dash('Foo', external_stylesheets=[dbc.themes.BOOTSTRAP])
 # app = dash.Dash()
 tickr = Ticker('TSLA')
@@ -21,6 +22,13 @@ oc = OptionChart(None,None)
 figOption = None
 # {'display':'none'}
 # {'display':'block'}
+def get_client_cookie_counter():
+    allcookies, latest_counter = dict(flask.request.cookies), 0
+    if 'counter' in allcookies:
+        latest_counter = allcookies['counter']
+    return int(latest_counter)
+
+
 content_first_row = dbc.Row(
     [
         dbc.Col(
@@ -92,7 +100,7 @@ def get_option_chart_display(p_switch_value,p_DivName):
     [State('graph','figure'),State('target_close','value'),
      State('date_picker','start_date'),State('date_picker','end_date'),
      ],
-    prevent_initial_call=True
+    # prevent_initial_call=True
 )
 def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,switch_value, replay_history, figure,target_close,
                        start_date,end_date):
@@ -112,11 +120,13 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
             df_click['expiry_dt'] = df_click.curveName.apply(lambda x: pd.to_datetime(x.split()[1]).strftime('%b %d'))
             oc = OptionChart(df_click.expiry_dt,df_click.x)
             return dash.no_update,oc.generate_fig(),target_close_text, toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
-        elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals': # triggered by timer
+        elif ctx.triggered[0]['prop_id'] in ['.','interval-component.n_intervals']: # triggered by inital_load ('.') or timer
             tickr.get_lastSalePrice()
             # if tickr.state == OIC_State.RUNNING:
             print (f'Previous call status: {tickr.state}')
-            if tickr.marketStatus == 'Market Closed': raise dash.exceptions.PreventUpdate()
+            # if tickr.marketStatus == 'Market Closed': raise dash.exceptions.PreventUpdate()
+            print (f'Client counter is : {get_client_cookie_counter()}')
+            dash.callback_context.response.set_cookie('counter', str(next(counter)))
 
             return tickr.get_charts(),dash.no_update,target_close_text,toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'target_close.value': # triggered by changing target_close

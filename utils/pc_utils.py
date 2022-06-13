@@ -388,8 +388,8 @@ class Ticker():
             fig.append_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Volume.values/2, mode='markers',
                            name='Call Volume_' + expirydt,
-                           marker=dict(size=[max(z/500,0) for z in df_expiry.c_Volume_1.fillna(0).values],
-                                       color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.5, ),
+                           marker=dict(size=[max(z/1000,0) for z in df_expiry.c_Volume_1.fillna(0).values],
+                                       color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.3, ),
                 row=i + 1, col=1)
             # Put Volume
             # fig.append_trace(
@@ -398,8 +398,8 @@ class Ticker():
             fig.append_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Volume.values/2, mode='markers',
                            name='Call Volume_' + expirydt,
-                           marker=dict(size=[max(z/500,0) for z in df_expiry.p_Volume_1.fillna(0).values],
-                                       color=['rgb(300,0,0)'] * len(df_expiry.c_Volume.values)), opacity=.5, ),
+                           marker=dict(size=[max(z/1000,0) for z in df_expiry.p_Volume_1.fillna(0).values],
+                                       color=['rgb(300,0,0)'] * len(df_expiry.c_Volume.values)), opacity=.3, ),
                 row=i + 1, col=1)
 
 

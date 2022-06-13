@@ -124,7 +124,7 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
             tickr.get_lastSalePrice()
             # if tickr.state == OIC_State.RUNNING:
             print (f'Previous call status: {tickr.state}')
-            # if tickr.marketStatus == 'Market Closed': raise dash.exceptions.PreventUpdate()
+            if tickr.marketStatus == 'Market Closed': raise dash.exceptions.PreventUpdate()
             print (f'Client counter is : {get_client_cookie_counter()}')
             dash.callback_context.response.set_cookie('counter', str(next(counter)))
 

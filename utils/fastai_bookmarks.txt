@@ -5,3 +5,7 @@ fastai Pipeline explanation: https://youtu.be/8i9bo5wLSE4?t=880
 L explanation: https://youtu.be/8i9bo5wLSE4?t=1546
 
 Typedispatch discussion: https://youtu.be/GcMGchBJeXk?t=1928 
+
+
+
+

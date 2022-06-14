@@ -8,6 +8,8 @@ df = pd.DataFrame(json.loads(res.text)['data']['table']['rows'])
 import numpy as np
 df['expirygroup'].replace('',np.nan, inplace=True)
 df['expirygroup'].ffill(inplace=True)
+df['drillDownURL']=df['drillDownURL'].apply(lambda x : f'https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@{x[59:] if x else x}&chscale=6m&chwid=700&chhig=300')
+
 num_of_expirydts=len(sorted(df.expirygroup.unique()))
 print ('finished')
 char_url = "https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@TSLA%20%20220916C01800000&chscale=6m&chwid=700&chhig=300"

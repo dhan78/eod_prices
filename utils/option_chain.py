@@ -8,5 +8,12 @@ df = pd.DataFrame(json.loads(res.text)['data']['table']['rows'])
 import numpy as np
 df['expirygroup'].replace('',np.nan, inplace=True)
 df['expirygroup'].ffill(inplace=True)
+num_of_expirydts=len(sorted(df.expirygroup.unique()))
 print ('finished')
 char_url = "https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@TSLA%20%20220916C01800000&chscale=6m&chwid=700&chhig=300"
+
+def get_evenly_divided_values(value_to_be_distributed, times):
+    return [value_to_be_distributed // times + int(x < value_to_be_distributed % times) for x in range(times)]
+green_range = get_evenly_divided_values(255,num_of_expirydts)
+dict_color=dict(zip(sorted(df.expirygroup.unique()),np.cumsum(green_range)))
+

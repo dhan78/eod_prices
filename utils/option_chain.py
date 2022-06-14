@@ -9,3 +9,4 @@ import numpy as np
 df['expirygroup'].replace('',np.nan, inplace=True)
 df['expirygroup'].ffill(inplace=True)
 print ('finished')
+char_url = "https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&snap=true&symbol=@TSLA%20%20230616C01800000&chscale=1y&chtype=AreaChart&chwid=600&chhig=426&chpccol=ff0000&chfrmon=false&chton=false&chpcon=true"

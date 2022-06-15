@@ -1,4 +1,6 @@
-from pc_utils import get_headers
+import base64
+
+from utils.pc_utils import get_headers
 import pandas as pd
 import html as html_orig
 import requests
@@ -45,8 +47,16 @@ for expirydt, df_expiry in df.groupby('expirygroup' )[['strike','c_Last','color'
     legendrank+=1
     fig.add_trace(
                     go.Scatter(x=df_expiry['strike'], y=df_expiry['c_Last'], name=expirydt,text=df_expiry['expirygroup'],
-                               mode='lines', line_shape='spline', marker_color='rgb(0,300,0)', opacity=.7,
-                               hovertemplate=
+                               mode='markers+lines', line_shape='spline', marker_color='rgb(0,0,255)', opacity=1.,
+                               marker=dict(
+                                   color='LightSkyBlue',
+                                   size=1,
+                                   line=dict(
+                                       color='MediumPurple',
+                                       width=1
+                                   )),
+
+                            hovertemplate=
                                "<b>%{text}</b><br><br>" +
                                "Strike: %{x:$,.0f}<br>" +
                                "Theta: %{y:.2f}<br>" +
@@ -76,21 +86,20 @@ from dash import Dash, dcc, html
 from dash.dependencies import Input, Output, State
 
 app = Dash(__name__, external_stylesheets=external_stylesheets)
-png_file_path = app.config['assets_folder'] + '/nasdaq_oc_chain.png'
+# png_file_path = app.config['assets_folder'] + '/nasdaq_oc_chain.png'
 import dash_bootstrap_components as dbc
 
 app.layout = html.Div([
-    html.Div([dcc.Loading(html.Img(id='url',
-             src=app.get_asset_url('nasdaq_oc_chain.png'),
+    html.Div([html.P(children="Show Option History",id='chart_title'),
+              dcc.Loading(html.Img(id='chart_id',
+             # src=app.get_asset_url('nasdaq_oc_chain.png'),
              # style={'width': '100%','display': 'inline-block', 'height': 'auto'}
-                       ))],className='seven columns'),
-
+                       ))],className='six columns'),
     html.Div([
-        dcc.Graph(
+        dcc.Loading(dcc.Graph(
             id='basic-interactions',
             figure=fig
-        ),
-
+        ))
     ], className='seven columns'),
 
 ])
@@ -98,7 +107,7 @@ def toggle_modal2(is_open):
     return not is_open
 
 @app.callback(
-    Output('url', 'src'),
+    Output('chart_title','children'),Output('chart_id', 'src'),
     Input('basic-interactions', 'clickData'),
     prevent_initial_call=True
 )
@@ -108,22 +117,9 @@ def display_click_data(clickData):
     expirygroup=fig.data[curveNumber].name
     point_mask = (df.expirygroup==expirygroup)&(df.strike==strike)
     drillDownURL=df.loc[point_mask]['drillDownURL'].values[0]
-    with open(png_file_path, 'wb') as p:
-        p.write(requests.get(drillDownURL).content)
-    return app.get_asset_url('nasdaq_oc_chain.png')
+    encoded_image = base64.b64encode(requests.get(drillDownURL).content)
+    return f'Show Option History ${strike:,.0f} , [{expirygroup}]', 'data:image/png;base64,{}'.format(encoded_image.decode())
 
 if __name__ == '__main__':
     app.run_server(debug=True, host = '0.0.0.0', port=9900)
 
-
-    
-    '''
-    @app.callback(
-    dash.dependencies.Output('image', 'src'),
-    [dash.dependencies.Input('image-dropdown', 'value')])
-def update_image_src(image_path):
-    # print the image_path to confirm the selection is as expected
-    print('current image_path = {}'.format(image_path))
-    encoded_image = base64.b64encode(open(image_path, 'rb').read())
-    return 'data:image/png;base64,{}'.format(encoded_image.decode())
-    '''

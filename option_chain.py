@@ -40,7 +40,9 @@ df=df[df.strike>600].copy()
 import plotly.graph_objects as go
 
 fig=go.Figure()
+legendrank=1001
 for expirydt, df_expiry in df.groupby('expirygroup' )[['strike','c_Last','color']]:
+    legendrank+=1
     fig.add_trace(
                     go.Scatter(x=df_expiry['strike'], y=df_expiry['c_Last'], name=expirydt,text=df_expiry['expirygroup'],
                                mode='lines', line_shape='spline', marker_color='rgb(0,300,0)', opacity=.7,
@@ -49,7 +51,9 @@ for expirydt, df_expiry in df.groupby('expirygroup' )[['strike','c_Last','color'
                                "Strike: %{x:$,.0f}<br>" +
                                "Theta: %{y:.2f}<br>" +
                                "<extra></extra>",
-                               line=dict(color=f'rgb(0,{dict_color.get(expirydt)},0)', width=1, )))
+                               line=dict(color=f'rgb(0,{dict_color.get(expirydt)},0)', width=1),
+                               legendrank=legendrank)
+                                )
 
 # fig.update_layout( xaxis_tickfont_size=14,
 #             height=600, width=1900,
@@ -64,37 +68,37 @@ for expirydt, df_expiry in df.groupby('expirygroup' )[['strike','c_Last','color'
 
 fig.update_layout( xaxis_tickfont_size=14,
             height=600, width=1900,
-            showlegend=True,)
-
-styles = {
-    'pre': {
-        'border': 'thin lightgrey solid',
-        'overflowX': 'scroll'
-    }
-}
+            showlegend=True,
+            )
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 from dash import Dash, dcc, html
 from dash.dependencies import Input, Output, State
 
 app = Dash(__name__, external_stylesheets=external_stylesheets)
+png_file_path = app.config['assets_folder'] + '/nasdaq_oc_chain.png'
 import dash_bootstrap_components as dbc
 
 app.layout = html.Div([
+    html.Div([dcc.Loading(html.Img(id='url',
+             src=app.get_asset_url('nasdaq_oc_chain.png'),
+             # style={'width': '100%','display': 'inline-block', 'height': 'auto'}
+                       ))],className='seven columns'),
+
     html.Div([
-        dcc.Link(children="Show Option History",href='url',id='url',target='_blank'),
         dcc.Graph(
             id='basic-interactions',
             figure=fig
-        )
-    ], className='eight columns'),
+        ),
+
+    ], className='seven columns'),
 
 ])
 def toggle_modal2(is_open):
     return not is_open
 
 @app.callback(
-    Output('url', 'children'),Output('url', 'href'),
+    Output('url', 'src'),
     Input('basic-interactions', 'clickData'),
     prevent_initial_call=True
 )
@@ -104,7 +108,9 @@ def display_click_data(clickData):
     expirygroup=fig.data[curveNumber].name
     point_mask = (df.expirygroup==expirygroup)&(df.strike==strike)
     drillDownURL=df.loc[point_mask]['drillDownURL'].values[0]
-    return f'Show Option History {strike},[{expirygroup}]', drillDownURL
+    with open(png_file_path, 'wb') as p:
+        p.write(requests.get(drillDownURL).content)
+    return app.get_asset_url('nasdaq_oc_chain.png')
 
 if __name__ == '__main__':
     app.run_server(debug=True, host = '0.0.0.0', port=9900)

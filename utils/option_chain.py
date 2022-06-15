@@ -42,8 +42,13 @@ import plotly.graph_objects as go
 fig=go.Figure()
 for expirydt, df_expiry in df.groupby('expirygroup' )[['strike','c_Last','color']]:
     fig.add_trace(
-                    go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Last.values, name=expirydt,
+                    go.Scatter(x=df_expiry['strike'], y=df_expiry['c_Last'], name=expirydt,text=df_expiry['expirygroup'],
                                mode='lines', line_shape='spline', marker_color='rgb(0,300,0)', opacity=.7,
+                               hovertemplate=
+                               "<b>%{text}</b><br><br>" +
+                               "Strike: %{x:$,.0f}<br>" +
+                               "Theta: %{y:.2f}<br>" +
+                               "<extra></extra>",
                                line=dict(color=f'rgb(0,{dict_color.get(expirydt)},0)', width=1, )))
 
 # fig.update_layout( xaxis_tickfont_size=14,

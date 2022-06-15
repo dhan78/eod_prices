@@ -21,23 +21,20 @@ df['drillDownURL']=df['drillDownURL'].apply(lambda x : f'https://app.quotemedia.
 df.drillDownURL = df.drillDownURL.str.replace('--','  ').values
 
 
-
-
-
 num_of_expirydts=len(sorted(df.expirygroup.unique()))
-print ('finished')
-char_url = "https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@TSLA%20%20220916C01800000&chscale=6m&chwid=700&chhig=300"
+char_url = "https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@TSLA%20%20220916C01800000&chscale=6m&chwid=1000&chhig=300"
 
 def get_evenly_divided_values(value_to_be_distributed, times):
     return [value_to_be_distributed // times + int(x < value_to_be_distributed % times) for x in range(times)]
 green_range = get_evenly_divided_values(255,num_of_expirydts)
 
-dict_color=dict(zip(df.expirygroup.unique(), np.cumsum(green_range)))
+dict_color=dict(zip(df.expirygroup.unique(), reversed(np.cumsum(green_range))))
 df['color']=df.expirygroup.map(dict_color)
 
 df[df.filter(regex='c_|p_|strike').columns] = df.filter(regex='c_|p_|strike').\
     apply(pd.to_numeric,errors='coerce')
 df=df[df.strike>600].copy()
+print ('finished Data Manipulation')
 
 import plotly.graph_objects as go
 
@@ -49,10 +46,10 @@ for expirydt, df_expiry in df.groupby('expirygroup' )[['strike','c_Last','color'
                     go.Scatter(x=df_expiry['strike'], y=df_expiry['c_Last'], name=expirydt,text=df_expiry['expirygroup'],
                                mode='markers+lines', line_shape='spline', marker_color='rgb(0,0,255)', opacity=1.,
                                marker=dict(
-                                   color='LightSkyBlue',
-                                   size=1,
+                                   color='green',
+                                   size=3,
                                    line=dict(
-                                       color='MediumPurple',
+                                       color='red',
                                        width=1
                                    )),
 

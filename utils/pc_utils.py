@@ -636,3 +636,15 @@ class Ticker():
         ##############################################################################
 
         return fig
+
+   '''
+   
+   @app.callback(
+    dash.dependencies.Output('image', 'src'),
+    [dash.dependencies.Input('image-dropdown', 'value')])
+def update_image_src(image_path):
+    # print the image_path to confirm the selection is as expected
+    print('current image_path = {}'.format(image_path))
+    encoded_image = base64.b64encode(open(image_path, 'rb').read())
+    return 'data:image/png;base64,{}'.format(encoded_image.decode())
+    '''

@@ -1,9 +1,10 @@
 import functools
-
+import sys
+sys.path.insert(0, '')
 from utils.pc_utils import *
 
 import dash
-from dash import dcc,html
+from dash import dcc, html, callback
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 from itertools import count
@@ -14,6 +15,8 @@ import flask
 
 counter = count()
 app = dash.Dash('Foo', external_stylesheets=[dbc.themes.BOOTSTRAP])
+dash.register_page(__name__, path="/")
+
 # app = dash.Dash()
 tickr = Ticker('TSLA')
 # current_price = tickr.get_lastSalePrice()
@@ -83,7 +86,7 @@ def get_option_chart_display(p_switch_value,p_DivName):
     else:
         return {'display': 'none'}
 
-@app.callback(
+@callback(
     [Output('graph', 'figure'),
      Output('option-chart-output', 'figure'),
      Output('slider-output-container', 'children'),
@@ -154,5 +157,6 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
 
 
 
-
-app.run_server(debug=True, host='0.0.0.0',threaded=True)  # Turn off reloader if inside Jupyter
+if __name__ == '__main__':
+    # pass
+    app.run_server(debug=True, host='0.0.0.0',threaded=True)  # Turn off reloader if inside Jupyter

@@ -502,8 +502,8 @@ class Ticker():
             ),
             hovermode='x',
             barmode='group',
-            bargap=0.15,  # gap between bars of adjacent location coordinates.
-            bargroupgap=0.1,  # gap between bars of the same location coordinate.
+            # bargap=0.15,  # gap between bars of adjacent location coordinates.
+            bargroupgap=0.,  # gap between bars of the same location coordinate.
             # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour
         )
         # Save df & fig for future updates
@@ -637,3 +637,77 @@ class Ticker():
 
         return fig
 
+
+def convert_dt_to_str(p_dt_list):
+    return [f"{pd.to_datetime(dt).strftime('%b %d %Y')}" for dt in p_dt_list]
+
+class Nasdaq_Leap():
+    def __int__(self):
+        self.df, self.dict_color = None, None
+
+    def get_nasdaq_leap_option_chain(self):
+        url = 'https://api.nasdaq.com/api/quote/TSLA/option-chain?assetclass=stocks&limit=6000&fromdate=all&todate=all&excode=oprac&callput=call&money=out&type=all'
+        res = requests.get(url, headers=get_headers())
+        df = pd.DataFrame(json.loads(res.text)['data']['table']['rows'])
+
+        df['expirygroup'].replace('',np.nan, inplace=True)
+        df['expirygroup'].ffill(inplace=True)
+        df['expirygroup']=pd.to_datetime(df.expirygroup)
+        df['expirygroup']=convert_dt_to_str(df.expirygroup.values)
+
+        df['drillDownURL']=df['drillDownURL'].apply(lambda x : f'https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@{x[59:] if x else x}&chscale=6m&chwid=700&chhig=300')
+        df.drillDownURL = df.drillDownURL.str.replace('--','  ').values
+
+
+        num_of_expirydts=len(sorted(df.expirygroup.unique()))
+        char_url = "https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@TSLA%20%20220916C01800000&chscale=6m&chwid=1000&chhig=300"
+
+        def get_evenly_divided_values(value_to_be_distributed, times):
+            return [value_to_be_distributed // times + int(x < value_to_be_distributed % times) for x in range(times)]
+        green_range = get_evenly_divided_values(255,num_of_expirydts)
+
+        dict_color=dict(zip(df.expirygroup.unique(), reversed(np.cumsum(green_range))))
+        df['color']=df.expirygroup.map(dict_color)
+
+        df[df.filter(regex='c_|p_|strike').columns] = df.filter(regex='c_|p_|strike').\
+            apply(pd.to_numeric,errors='coerce')
+        df=df[df.strike>600].copy()
+        print (f'{get_evenly_divided_values.__name__} : finished Data Manipulation')
+        self.df, self.dict_color = df, dict_color
+        return self.df, self.dict_color
+
+    def buil_leap_fig(self):
+
+        df, dict_color = self.get_nasdaq_leap_option_chain()
+        legendrank = 1001
+        fig = go.Figure()
+        for expirydt, df_expiry in df.groupby('expirygroup')[['strike', 'c_Last', 'color']]:
+            legendrank += 1
+
+            fig.add_trace(
+                                go.Scatter(x=df_expiry['strike'], y=df_expiry['c_Last'], name=expirydt,text=df_expiry['expirygroup'],
+                                           mode='markers+lines', line_shape='spline', marker_color='rgb(0,0,255)', opacity=1.,
+                                           marker=dict(
+                                               color='green',
+                                               size=3,
+                                               line=dict(
+                                                   color='red',
+                                                   width=1
+                                               )),
+
+                                        hovertemplate=
+                                           "<b>%{text}</b><br><br>" +
+                                           "Strike: %{x:$,.0f}<br>" +
+                                           "Theta: %{y:.2f}<br>" +
+                                           "<extra></extra>",
+                                           line=dict(color=f'rgb(0,{dict_color.get(expirydt)},0)', width=1),
+                                           legendrank=legendrank)
+                                            )
+
+        fig.layout.update(dict(yaxis=dict(range=[0,df.c_Last.max()])))
+
+        fig.update_layout( xaxis_tickfont_size=14,
+                    height=600, width=1900,
+                    showlegend=True,
+                    )
+        return fig

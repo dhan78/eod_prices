@@ -7,7 +7,7 @@ from sqlite3 import Error
 import datetime as dt
 
 #import requests_cache
-import requests_cache
+# import requests_cache
 import yfinance as yf
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
@@ -680,30 +680,52 @@ class Nasdaq_Leap():
     def buil_leap_fig(self):
 
         df, dict_color = self.get_nasdaq_leap_option_chain()
+        df['c_Volume_1'] = pd.to_numeric(df['c_Volume'].astype(str), errors='coerce').fillna(0)
+        df['c_Openinterest'] = pd.to_numeric(df['c_Openinterest'].astype(str), errors='coerce').fillna(0)
         legendrank = 1001
+        spot = df.strike.min()
         fig = go.Figure()
+        def marker_size_by_strike(strike,volume):
+            if strike > spot*1.2:
+                return max(volume / 600, 0)
+            else:
+                return 0
+
+
         for expirydt, df_expiry in df.groupby('expirygroup')[['strike', 'c_Last', 'color']]:
             legendrank += 1
 
             fig.add_trace(
                                 go.Scatter(x=df_expiry['strike'], y=df_expiry['c_Last'], name=expirydt,text=df_expiry['expirygroup'],
-                                           mode='markers+lines', line_shape='spline', marker_color='rgb(0,0,255)', opacity=1.,
-                                           marker=dict(
-                                               color='green',
-                                               size=3,
-                                               line=dict(
-                                                   color='red',
-                                                   width=1
-                                               )),
+                                           mode='lines+markers', line_shape='spline', marker_color='rgb(0,0,255)', opacity=1.,
+                                           customdata=np.stack((df_expiry['c_Openinterest'], df_expiry['c_Volume_1']),
+                                                               axis=-1),
+                                           # marker=dict(
+                                           #     color='green',
+                                           #     size=3,
+                                           #     line=dict(
+                                           #         color='red',
+                                           #         width=1
+                                           #     )),
+                                           marker=dict(opacity=.3,
+                                               size=[marker_size_by_strike(strike,z) for strike,z in zip(df_expiry.strike.values,df_expiry.c_Openinterest.values)],
+                                               color=['green'] * len(df_expiry.c_Volume.values)),
 
                                         hovertemplate=
                                            "<b>%{text}</b><br><br>" +
                                            "Strike: %{x:$,.0f}<br>" +
                                            "Theta: %{y:.2f}<br>" +
-                                           "<extra></extra>",
+                                           "Openinterest: %{customdata[0]:,.0f}<br>" +
+                                           "Volume: %{customdata[1]:,.0f}<br>"
+                                           ,
                                            line=dict(color=f'rgb(0,{dict_color.get(expirydt)},0)', width=1),
                                            legendrank=legendrank)
                                             )
+            # fig.add_trace(
+            #     go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Volume.values / 2, mode='markers',
+            #                name='Call Volume_' + expirydt,
+            #                marker=dict(size=[max(z / 100, 0) for z in df_expiry.c_Volume_1.fillna(0).values],
+            #                            color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.3, ))
 
         fig.layout.update(dict(yaxis=dict(range=[0,df.c_Last.max()])))
 

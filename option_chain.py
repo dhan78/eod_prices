@@ -1,7 +1,7 @@
 import base64
 import sys
 sys.path.insert(0, '')
-from utils.pc_utils import get_headers, Nasdaq_Leap
+from utils.pc_utils import Nasdaq_Leap
 import dash_bootstrap_components as dbc
 import pandas as pd
 import html as html_orig

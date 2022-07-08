@@ -1,6 +1,6 @@
 import base64
 import sys
-sys.path.insert(0, '')
+# sys.path.insert(0, '')
 from utils.pc_utils import Nasdaq_Leap
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -17,32 +17,35 @@ from dash import Dash, dcc, html, callback
 from dash.dependencies import Input, Output, State
 
 app = Dash(__name__, external_stylesheets=external_stylesheets)
-dash.register_page(__name__)
+dash.register_page(__name__, path='/display_option_chain',
+                        title = 'LEAP Options Dashboard',
+                        name = 'LEAP Dashboard')
+
 NL = Nasdaq_Leap()
 fig = NL.buil_leap_fig()
-app.layout = html.Div([
-    dcc.Interval(
-        id='interval-component',
-        interval= 15*60 * 1000,  # 15 minute timer
-        n_intervals=0
-    ),
 
-    dbc.Row(html.Div([
+app.layout=dbc.Container([
+    dbc.Row([dbc.Col([
               dcc.Loading(html.Img(id='chart_id',)),
               html.P(children="Show Option History",id='chart_title'),
-              ],className='six columns')),
-    dbc.Row(html.Div([
+              dcc.Interval(
+                    id='interval-component',
+                    interval= 15*60 * 1000,  # 15 minute timer
+                    n_intervals=0
+                    )
+              ],)], ),
+    dbc.Row(dbc.Col([
         dcc.Loading(dcc.Graph(
             id='basic-interactions',
             figure=fig
-        ))
-    ], className='six columns')),
-
+        )),
+        ], )),
 ])
+
 def toggle_modal2(is_open):
     return not is_open
 
-@callback(
+@dash.callback(
     Output('chart_title','children'),Output('chart_id', 'src'),
     Input('basic-interactions', 'clickData'),
     prevent_initial_call=True
@@ -56,7 +59,7 @@ def display_click_data(clickData):
     encoded_image = base64.b64encode(requests.get(drillDownURL).content)
     return f'Show Option History ${strike:,.0f} , [{expirygroup}]', 'data:image/png;base64,{}'.format(encoded_image.decode())
 
-@callback(
+@dash.callback(
     Output('basic-interactions','figure'),
     Input('interval-component', 'n_intervals'),
     prevent_initial_call=True

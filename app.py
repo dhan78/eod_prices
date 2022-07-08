@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc # pip install dash-bootstrap-components
 # Code from: https://github.com/plotly/dash-labs/tree/main/docs/demos/multi_page_example1
 
 app = dash.Dash(
-    __name__, plugins=[dl.plugins.pages], external_stylesheets=[dbc.themes.BOOTSTRAP]
+    __name__, use_pages=True, plugins=[dl.plugins.pages], external_stylesheets=[dbc.themes.BOOTSTRAP]
 )
 
 navbar = dbc.NavbarSimple(
@@ -17,6 +17,7 @@ navbar = dbc.NavbarSimple(
         nav=True,
         label="More Pages",
     ),
+
     brand="Multi Page App Plugin Demo",
     color="primary",
     dark=True,
@@ -24,7 +25,7 @@ navbar = dbc.NavbarSimple(
 )
 
 app.layout = dbc.Container(
-    [navbar, dl.plugins.page_container],
+    [navbar, dash.page_container],
     fluid=True,
 )
 

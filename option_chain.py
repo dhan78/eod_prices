@@ -16,7 +16,7 @@ import dash
 from dash import Dash, dcc, html, callback
 from dash.dependencies import Input, Output, State
 
-app = Dash(__name__, external_stylesheets=external_stylesheets)
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 dash.register_page(__name__, path='/display_option_chain',
                         title = 'LEAP Options Dashboard',
                         name = 'LEAP Dashboard')
@@ -26,21 +26,22 @@ fig = NL.buil_leap_fig()
 
 app.layout=dbc.Container([
     dbc.Row([dbc.Col([
-              dcc.Loading(html.Img(id='chart_id',)),
+              html.H1(children="Option History",className='fs-3'),
+              dcc.Loading(html.Img(id='chart_id',className='shadow')),
               html.P(children="Show Option History",id='chart_title'),
               dcc.Interval(
                     id='interval-component',
                     interval= 15*60 * 1000,  # 15 minute timer
                     n_intervals=0
                     )
-              ],)], ),
+              ],width={'size':9,'offset':3})], ),
     dbc.Row(dbc.Col([
         dcc.Loading(dcc.Graph(
             id='basic-interactions',
-            figure=fig
-        )),
+            figure=fig,
+            className='shadow')),
         ], )),
-])
+], fluid=True)
 
 def toggle_modal2(is_open):
     return not is_open

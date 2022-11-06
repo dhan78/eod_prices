@@ -296,7 +296,7 @@ class Ticker():
         load_dt = datetime.today().strftime('%Y-%m-%d')
         weekly_expiry_end = weekly_expiry_target.strftime('%Y-%m-%d')
 
-        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/option-chain?assetclass=stocks&limit=800&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
+        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/option-chain?assetclass=stocks&limit=80&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
         response = requests.get(url, headers=get_headers())
         # rws = response.json()['data']['rows']
         if response.json()['data']:
@@ -673,7 +673,7 @@ class Nasdaq_Leap():
 
         df[df.filter(regex='c_|p_|strike').columns] = df.filter(regex='c_|p_|strike').\
             apply(pd.to_numeric,errors='coerce')
-        df=df[df.strike>600].copy()
+        df=df[df.strike>200].copy()
         print (f'{get_evenly_divided_values.__name__} : finished Data Manipulation')
         self.df, self.dict_color = df, dict_color
         return self.df, self.dict_color

@@ -296,7 +296,7 @@ class Ticker():
         load_dt = datetime.today().strftime('%Y-%m-%d')
         weekly_expiry_end = weekly_expiry_target.strftime('%Y-%m-%d')
 
-        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/option-chain?assetclass=stocks&limit=80&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
+        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/option-chain?assetclass=stocks&limit=100&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
         response = requests.get(url, headers=get_headers())
         # rws = response.json()['data']['rows']
         if response.json()['data']:
@@ -431,7 +431,7 @@ class Ticker():
             ), row=i + 1, col=1)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            fig.update_xaxes(row=i + 1, col=1, dtick=5, tickangle=-90)
+            fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-60)
             title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, y_max], row=i + 1, col=1, secondary_y=False)
             fig.update_yaxes(range=[0, 10], row=i + 1, col=1, secondary_y=True)
@@ -486,7 +486,7 @@ class Ticker():
             ), row=i + 1, col=2)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            fig.update_xaxes(row=i + 1, col=2, dtick=5, tickangle=-90)
+            fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-60)
             title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, 60], row=i + 1, col=2)  # ,ticksuffix="%")
 
@@ -508,6 +508,7 @@ class Ticker():
             bargroupgap=0.,  # gap between bars of the same location coordinate.
             # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour
         )
+
         # Save df & fig for future updates
         self.df, self.fig = df, fig
         self.target_close_lst = list(dict.fromkeys(self.target_close_lst))  # dedupe list
@@ -688,7 +689,7 @@ class Nasdaq_Leap():
         spot = df.strike.min()
         fig = go.Figure()
         def marker_size_by_strike(strike,volume):
-            if strike > spot*1.2:
+            if strike > spot*1.:
                 return max(volume / 600, 0)
             else:
                 return 0

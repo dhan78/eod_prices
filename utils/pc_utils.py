@@ -90,6 +90,20 @@ class DB():
             e = sys.exc_info()[1]
             print(traceback.print_exc())
 
+    def store_momentum_data(self,p_df, p_load_dt):
+        # import pdb; pdb.set_trace()
+
+        try:
+            conn = self.create_connection()
+            p_df['load_dt'] = p_load_dt
+            insert_qry = ' insert or ignore into mmtm_daily (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
+            insert_qry = ' insert or ignore into mmtm_daily ("' + '","'.join(p_df.columns) + '") values ('+str('?,'*len(p_df.columns))[:-1] +') '
+            conn.executemany(insert_qry, p_df.to_records(index=False))
+            conn.commit()
+        except:
+            e = sys.exc_info()[1]
+            print(traceback.print_exc())
+
     def query_spot_price(self,p_load_dt):
         sql_str = f'''select tsla_spot_price from tsla_nasdaq where load_dt = '{p_load_dt}' order by load_dt desc , load_tm desc limit 1 '''
         conn=self.create_connection()
@@ -674,7 +688,7 @@ class Nasdaq_Leap():
 
         df[df.filter(regex='c_|p_|strike').columns] = df.filter(regex='c_|p_|strike').\
             apply(pd.to_numeric,errors='coerce')
-        df=df[df.strike>200].copy()
+        df=df[df.strike>160].copy()
         print (f'{get_evenly_divided_values.__name__} : finished Data Manipulation')
         self.df, self.dict_color = df, dict_color
         return self.df, self.dict_color

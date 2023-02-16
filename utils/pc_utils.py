@@ -6,6 +6,7 @@ import traceback
 from sqlite3 import Error
 import datetime as dt
 
+import requests_cache
 #import requests_cache
 # import requests_cache
 # import requests_cache
@@ -390,6 +391,7 @@ class Ticker():
             df_expiry['c_p_ratio'] = df_expiry.c_Openinterest / df_expiry.p_Openinterest
             df_expiry['p_c_ratio'] = df_expiry.p_Openinterest / df_expiry.c_Openinterest
             custom_feature_range = (0,df_expiry[['c_Openinterest','p_Openinterest']].max().max())
+            df_expiry[['c_Volume_1_orig', 'p_Volume_1_orig']]=df_expiry[['c_Volume_1', 'p_Volume_1']]
             df_expiry[['c_Volume_1', 'p_Volume_1']] = MinMaxScaler(feature_range=custom_feature_range).fit_transform(
                 df_expiry[['c_Volume_1', 'p_Volume_1']].values)
             # df_expiry['p_Volume_1'] = StandardScaler().fit_transform(df_expiry['p_Volume_1'].values)
@@ -406,14 +408,18 @@ class Ticker():
             # Call Volume
             fig.add_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values/2, mode='markers',
-                           name='Call Volume_' + expirydt,
+                           name='',#'Call Volume_' + expirydt,
+                           text=df_expiry.c_Volume_1_orig.values,
+                           hovertemplate="Call Volume: %{text:,}",
                            marker=dict(size=[z/100 for z in df_expiry.c_Volume_1.fillna(0).values],
                                        color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.2, ),
                 row=i + 1, col=1)
             # Put Volume
             fig.add_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values/2, mode='markers',
-                           name='Put Volume_' + expirydt,
+                           name='',#'Put Volume_' + expirydt,
+                           text=df_expiry.p_Volume_1_orig.values,
+                           hovertemplate="Put Volume: %{text:,}",
                            marker=dict(size=[z/100 for z in df_expiry.p_Volume_1.fillna(0).values],
                                        color=['rgb(300,0,0)'] * len(df_expiry.c_Volume.values)), opacity=.2, ),
                 row=i + 1, col=1)
@@ -516,7 +522,7 @@ class Ticker():
                 bgcolor='rgba(255, 255, 255, 0)',
                 bordercolor='rgba(255, 255, 255, 0)'
             ),
-            hovermode='x',
+            hovermode='x unified',
             barmode='group',
             # bargap=0.15,  # gap between bars of adjacent location coordinates.
             bargroupgap=0.,  # gap between bars of the same location coordinate.

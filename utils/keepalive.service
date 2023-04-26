@@ -1,5 +1,5 @@
 [Service]
-ExecStart=/usr/local/bin/.keepalive.sh
+ExecStart=/usr/local/bin/keepalive.sh
 User=admin
 
 [Install]

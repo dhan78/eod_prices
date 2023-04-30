@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc  # pip install dash-bootstrap-components
 app = dash.Dash(
     __name__, use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP]
 )
-
+server = app.server
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink(page["name"], href=page["path"])) for page in dash.page_registry.values()

@@ -90,3 +90,4 @@ webdriver-manager
 Werkzeug
 wsproto
 yfinance
+gunicorn

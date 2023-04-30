@@ -384,7 +384,7 @@ class Ticker():
                             specs=[[{"secondary_y": True}, {"secondary_y": True}]] * num_or_charts)
         y_max = df.filter(regex='Openinterest').apply(pd.to_numeric, errors='coerce').max(axis=1).max()*1.1
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
+            expirydt = expiry[0][0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
             df_expiry = expiry[1]
             # df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
             df_expiry.sort_values(by='strike', inplace=True)
@@ -452,13 +452,13 @@ class Ticker():
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-60)
-            title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
+            title_text = expiry[0][0] if isinstance(expiry[0], str) else expiry[0][0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, y_max], row=i + 1, col=1, secondary_y=False)
             fig.update_yaxes(range=[0, 10], row=i + 1, col=1, secondary_y=True)
             fig.add_vline(x=lastSalePrice, line_dash='dash', line_color='black', line_width=.6, row=i + 1, col=1)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            expirydt = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
+            expirydt = expiry[0] if isinstance(expiry[0], str) else expiry[0][0].strftime('%B-%d-%Y')
             df_expiry = expiry[1]
             df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
             df_expiry.sort_values(by=['strike'], inplace=True)
@@ -507,7 +507,7 @@ class Ticker():
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-60)
-            title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
+            title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0][0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, 60], row=i + 1, col=2)  # ,ticksuffix="%")
 
         fig.update_layout(

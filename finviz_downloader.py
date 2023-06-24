@@ -20,12 +20,12 @@ async def get_headers():
 
 async def main(p_ticker_list, p_csv_filename):
 
-    urls = [f'https://finviz.com/quote.ashx?t={ticker}&p=d' for ticker in ticker_list]
+    urls = [f'https://finviz.com/quote.ashx?t={ticker}&p=d' for ticker in p_ticker_list]
 
     headers = await get_headers()
 
     async with aiohttp.ClientSession(headers=headers) as session:
-        tasks = [download_url(session, url,ticker) for url,ticker in zip(urls,ticker_list)]
+        tasks = [download_url(session, url,ticker) for url,ticker in zip(urls,p_ticker_list)]
         results = await asyncio.gather(*tasks)
         df_all_ticker = pd.concat(results)
         df_all_ticker.to_csv(p_csv_filename, index=None)

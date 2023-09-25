@@ -50,4 +50,5 @@ def hide_graph(my_input):
 
 
 if __name__ == '__main__':
+
     app.run_server(port=8125, debug = True)

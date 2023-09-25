@@ -5,18 +5,23 @@ import sys
 import traceback
 from sqlite3 import Error
 import datetime as dt
+
+import requests_cache
+#import requests_cache
+# import requests_cache
+# import requests_cache
 import yfinance as yf
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler, MinMaxScaler
 import requests
 import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import simplejson as json
 import re
-import requests_cache
+#import requests_cache
 import random
 import pandas as pd
 from enum import Enum, auto
@@ -86,6 +91,20 @@ class DB():
             e = sys.exc_info()[1]
             print(traceback.print_exc())
 
+    def store_momentum_data(self,p_df, p_load_dt):
+        # import pdb; pdb.set_trace()
+
+        try:
+            conn = self.create_connection()
+            p_df['load_dt'] = p_load_dt
+            insert_qry = ' insert or ignore into mmtm_daily (' + ','.join(p_df.columns) + ') values ('+str('?,'*len(p_df.columns))[:-1] +') '
+            insert_qry = ' insert or ignore into mmtm_daily ("' + '","'.join(p_df.columns) + '") values ('+str('?,'*len(p_df.columns))[:-1] +') '
+            conn.executemany(insert_qry, p_df.to_records(index=False))
+            conn.commit()
+        except:
+            e = sys.exc_info()[1]
+            print(traceback.print_exc())
+
     def query_spot_price(self,p_load_dt):
         sql_str = f'''select tsla_spot_price from tsla_nasdaq where load_dt = '{p_load_dt}' order by load_dt desc , load_tm desc limit 1 '''
         conn=self.create_connection()
@@ -135,7 +154,7 @@ class DB():
 
 
 PATH = pathlib.Path(__file__).parent
-DATA_PATH = PATH.joinpath("../").resolve()
+DATA_PATH = PATH.joinpath("../data").resolve()
 db=DB(db_file=DATA_PATH.joinpath('data_store.sqlite'))
 
 
@@ -230,7 +249,7 @@ class OptionChart():
                 tickmode='array',
                 tickvals=df_option.index,
                 ticktext=df_option['dt'].apply(lambda x: x.strftime('%b %d %H:%M')),
-                tickangle = -90,
+                tickangle = -60,
                 tickfont = dict(
                             size=10,
                             color="blue"
@@ -274,11 +293,17 @@ class Ticker():
         return lastSalePrice
 
     def get_prevBusDay(self):
-        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/historical?assetclass=stocks&fromdate={prev_friday_yyyy_mm_dd}&limit=1&todate={run_dt_yyyy_mm_dd}'
-        # url = 'https://api.nasdaq.com/api/quote/TSLA/realtime-trades?&limit=10&fromTime=00:00'
-        response = requests.get(url, headers=get_headers())
-        lastBusDay = response.json()['data']['tradesTable']['rows'][0]['date']
-        self.lastBusDay_yyyy_mm_dd=pd.to_datetime(lastBusDay).strftime('%Y-%m-%d')
+        try:
+            url = f'https://api.nasdaq.com/api/quote/{self.ticker}/historical?assetclass=stocks&fromdate={prev_friday_yyyy_mm_dd}&limit=1&todate={run_dt_yyyy_mm_dd}'
+            response = requests.get(url, headers=get_headers())
+            lastBusDay = response.json()['data']['tradesTable']['rows'][0]['date']
+            self.lastBusDay_yyyy_mm_dd = pd.to_datetime(lastBusDay).strftime('%Y-%m-%d')
+        except Exception as e:
+            url = f'https://api.nasdaq.com/api/quote/{self.ticker}/info?assetclass=stocks'
+            response = requests.get(url, headers=get_headers())
+            self.lastBusDay_yyyy_mm_dd = pd.to_datetime(response.json()['data']['secondaryData']['lastTradeTimestamp'].split('ON')[1]).strftime(
+                '%Y-%m-%d')
+
 
 # prev_bus_day_closing price: https://api.nasdaq.com/api/quote/TSLA/historical?assetclass=stocks&fromdate=2021-06-06&limit=1&todate=2021-07-06
 
@@ -286,7 +311,7 @@ class Ticker():
         load_dt = datetime.today().strftime('%Y-%m-%d')
         weekly_expiry_end = weekly_expiry_target.strftime('%Y-%m-%d')
 
-        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/option-chain?assetclass=stocks&limit=800&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
+        url = f'https://api.nasdaq.com/api/quote/{self.ticker}/option-chain?assetclass=stocks&limit=100&fromdate={load_dt}&todate={weekly_expiry_end}&excode=oprac&callput=callput&money=at&type=all'
         response = requests.get(url, headers=get_headers())
         # rws = response.json()['data']['rows']
         if response.json()['data']:
@@ -319,6 +344,7 @@ class Ticker():
 
     def get_charts(self, *args, **kwargs):
         self.set_state(OIC_State.RUNNING)
+
         if 'replay' not in kwargs.keys():
             _ = self.get_lastSalePrice()
             lastSalePrice = self.lastSalePrice
@@ -329,34 +355,76 @@ class Ticker():
 
         if df is None: return None
 
+        # convert numeric columns before manipulation.
+        df[df.filter(regex='c_|p_|strike').columns] = df.filter(regex='c_|p_|strike').apply(pd.to_numeric,
+                                                                                            errors='coerce')
+        if kwargs.get('show_volume'):
+            try:
+                # run_dt_yyyy_mm_dd='2022-01-07'
+                df_vol = db.query_sql_data(
+                    f"with st_tm as (select min(load_tm) as tm from tsla_nasdaq where load_dt = '{run_dt_yyyy_mm_dd}')select * from st_tm, tsla_nasdaq where load_dt = '{run_dt_yyyy_mm_dd}' and load_tm = st_tm.tm")
+                df_vol['p_Volume_1'] = pd.to_numeric(df_vol['p_Volume'].astype(str), errors='coerce').fillna(0)
+                df_vol['c_Volume_1'] = pd.to_numeric(df_vol['c_Volume'].astype(str), errors='coerce').fillna(0)
+
+                df = df.merge(df_vol[['expiryDate', 'strike', 'p_Volume_1', 'c_Volume_1']], left_on=['expiryDate', 'strike'],
+                         right_on=['expiryDate', 'strike'], )
+                df['c_Volume_1'] = df['c_Volume'] - df['c_Volume_1']
+                df['p_Volume_1'] = df['p_Volume'] - df['p_Volume_1']
+            except Exception as e:
+                print ('Exception in show_volume section')
+                print ('*'*10, e)
+
+        if 'c_Volume_1' not in df.columns:
+            df['c_Volume_1'] = df['c_Volume']
+            df['p_Volume_1'] = df['p_Volume']
+
         num_or_charts = len(df.expirygroup.unique())
 
         fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, horizontal_spacing=0.06, print_grid=True,
                             specs=[[{"secondary_y": True}, {"secondary_y": True}]] * num_or_charts)
         y_max = df.filter(regex='Openinterest').apply(pd.to_numeric, errors='coerce').max(axis=1).max()*1.1
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            expirydt = expiry[0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
+            expirydt = expiry[0][0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
             df_expiry = expiry[1]
-            df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
+            # df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
             df_expiry.sort_values(by='strike', inplace=True)
             df_expiry['c_p_ratio'] = df_expiry.c_Openinterest / df_expiry.p_Openinterest
             df_expiry['p_c_ratio'] = df_expiry.p_Openinterest / df_expiry.c_Openinterest
+            custom_feature_range = (0,df_expiry[['c_Openinterest','p_Openinterest']].max().max())
+            df_expiry[['c_Volume_1_orig', 'p_Volume_1_orig']]=df_expiry[['c_Volume_1', 'p_Volume_1']]
+            df_expiry[['c_Volume_1', 'p_Volume_1']] = MinMaxScaler(feature_range=custom_feature_range).fit_transform(
+                df_expiry[['c_Volume_1', 'p_Volume_1']].values)
+            # df_expiry['p_Volume_1'] = StandardScaler().fit_transform(df_expiry['p_Volume_1'].values)
+            # df_expiry['c_Volume_1'] = StandardScaler().fit_transform(df_expiry['c_Volume_1'].values)
+
             # Call Open Interest
-            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values,
+            fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values,
                                     name='Call Open Interest_' + expirydt, marker_color='rgb(0,128,0)', opacity=.8,
                                     width=.6), row=i + 1, col=1, )
             # Put Open Interest
-            fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values,
+            fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values,
                                     name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.8,
                                     width=.6), row=i + 1, col=1)
             # Call Volume
-            fig.append_trace(
-                go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Volume.values, name='Call Volume_' + expirydt,
-                       marker_color='rgb(0,300,0)', opacity=.4, width=.3), row=i + 1, col=1)
+            fig.add_trace(
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values/2, mode='markers',
+                           name='',#'Call Volume_' + expirydt,
+                           text=df_expiry.c_Volume_1_orig.values,
+                           hovertemplate="Call Volume: %{text:,}",
+                           marker=dict(size=[z/100 for z in df_expiry.c_Volume_1.fillna(0).values],
+                                       color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.2, ),
+                row=i + 1, col=1)
             # Put Volume
-            fig.append_trace(
-                go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Volume.values, name='Put Volume_' + expirydt,
-                       marker_color='rgb(300,0,0)', opacity=.4, width=.3), row=i + 1, col=1)
+            fig.add_trace(
+                go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values/2, mode='markers',
+                           name='',#'Put Volume_' + expirydt,
+                           text=df_expiry.p_Volume_1_orig.values,
+                           hovertemplate="Put Volume: %{text:,}",
+                           marker=dict(size=[z/100 for z in df_expiry.p_Volume_1.fillna(0).values],
+                                       color=['rgb(300,0,0)'] * len(df_expiry.c_Volume.values)), opacity=.2, ),
+                row=i + 1, col=1)
+
+
             # #Call/Put Ratio
             fig.add_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_p_ratio.values, name='c_p_Ratio ' + expirydt,
@@ -369,7 +437,7 @@ class Ticker():
                            line=dict(color='rgb(255,0,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
 
             # Current Price
-            fig.append_trace(go.Scatter(
+            fig.add_trace(go.Scatter(
                 x=[lastSalePrice],
                 y=[y_max * .9],
                 text=[str(lastSalePrice)],
@@ -383,14 +451,14 @@ class Ticker():
             ), row=i + 1, col=1)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-90)
-            title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
+            fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-60)
+            title_text = expiry[0][0] if isinstance(expiry[0], str) else expiry[0][0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, y_max], row=i + 1, col=1, secondary_y=False)
             fig.update_yaxes(range=[0, 10], row=i + 1, col=1, secondary_y=True)
             fig.add_vline(x=lastSalePrice, line_dash='dash', line_color='black', line_width=.6, row=i + 1, col=1)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            expirydt = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
+            expirydt = expiry[0] if isinstance(expiry[0], str) else expiry[0][0].strftime('%B-%d-%Y')
             df_expiry = expiry[1]
             df_expiry = df_expiry.filter(regex='c_|p_|strike').apply(pd.to_numeric, errors='coerce')
             df_expiry.sort_values(by=['strike'], inplace=True)
@@ -404,27 +472,27 @@ class Ticker():
             # Put Price Change (Theta decay)
             # fig.append_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry['p_Change'].values, hovertemplate='%{y:.2f}', name='P Decay' + expirydt, marker_color='rgb(255,0,0)', opacity=.8, width=.3), row=i + 1, col=2)
             # Call prices
-            fig.append_trace(
+            fig.add_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Last.values, name='C ' + expirydt, mode='lines',
                            line_shape='spline', marker_color='rgb(0,128,0)', opacity=.8), row=i + 1, col=2)
             # Put prices
-            fig.append_trace(
+            fig.add_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Last.values, name='P ' + expirydt, mode='lines',
                            line_shape='spline', marker_color='rgb(225,0,0)', opacity=.8), row=i + 1, col=2)
             # Call prices (t-1)
-            fig.append_trace(
+            fig.add_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_1.values, name='C-1 ' + expirydt, mode='lines',
                            line_shape='spline', marker_color='rgb(6, 171, 39)', opacity=.8,
                            line=dict(color='rgb(0,128,0)', width=1, dash='dot')), row=i + 1, col=2)
             # Put prices (t-1)
-            fig.append_trace(
+            fig.add_trace(
                 go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_1.values, name='P-1 ' + expirydt, mode='lines',
                            line_shape='spline', marker_color='rgb(350,0,0)', opacity=.8,
                            line=dict(color='rgb(255,0,0)', width=1, dash='dot')), row=i + 1, col=2)
 
             fig.add_vline(x=lastSalePrice, line_dash='dash', line_color='black', line_width=.6, row=i + 1, col=2)
             # Current price
-            fig.append_trace(go.Scatter(
+            fig.add_trace(go.Scatter(
                 x=[lastSalePrice],
                 y=[50 - i * 5],
                 text=[str(lastSalePrice)],
@@ -438,13 +506,13 @@ class Ticker():
             ), row=i + 1, col=2)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
-            fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-90)
-            title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%B-%d-%Y')
+            fig.update_xaxes(row=i + 1, col=2, dtick=2.5, tickangle=-60)
+            title_text = expiry[0] if isinstance(expiry[0], str) else expiry[0][0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, 60], row=i + 1, col=2)  # ,ticksuffix="%")
 
         fig.update_layout(
             title=f"Put Call Open Interest. [{self.dataSource}] @ <b>{datetime.today().strftime('%I:%M %p')}... {self.marketStatus}</b>",
-            xaxis_tickfont_size=14,
+            xaxis_tickfont_size=12,
             height=300 * num_or_charts, width=1900,
             showlegend=False,
             title_font_size=14,
@@ -454,12 +522,13 @@ class Ticker():
                 bgcolor='rgba(255, 255, 255, 0)',
                 bordercolor='rgba(255, 255, 255, 0)'
             ),
-            hovermode='x',
+            hovermode='x unified',
             barmode='group',
-            bargap=0.15,  # gap between bars of adjacent location coordinates.
-            bargroupgap=0.1,  # gap between bars of the same location coordinate.
+            # bargap=0.15,  # gap between bars of adjacent location coordinates.
+            bargroupgap=0.,  # gap between bars of the same location coordinate.
             # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour
         )
+
         # Save df & fig for future updates
         self.df, self.fig = df, fig
         self.target_close_lst = list(dict.fromkeys(self.target_close_lst))  # dedupe list
@@ -518,7 +587,7 @@ class Ticker():
             expirydt = expiry[0] if isinstance(expiry[0], str) else expiry[0].strftime('%Y-%m-%d')
             new_targets=dict_target.get(expirydt,pd.DataFrame())
             if new_targets.shape[0]<10: continue
-            self.fig.append_trace(
+            self.fig.add_trace(
                 go.Scatter(x=new_targets.strike.values, y=new_targets.c_target_closing_price.values, name='*[' + str(self.target_close)+']', mode='lines',
                            line_shape='spline', marker_color='rgb(41, 74, 253 )', opacity=.7, line=dict(color='rgb(41, 74, 253 )', width=1, )), row=i + 1, col=2)
             self.fig.append_trace(
@@ -589,4 +658,100 @@ class Ticker():
         # fig.update_layout(sliders=[sliders_dict])
         ##############################################################################
 
+        return fig
+
+
+def convert_dt_to_str(p_dt_list):
+    return [f"{pd.to_datetime(dt).strftime('%b %d %Y')}" for dt in p_dt_list]
+
+class Nasdaq_Leap():
+    def __int__(self):
+        self.df, self.dict_color = None, None
+
+    def get_nasdaq_leap_option_chain(self):
+        url = 'https://api.nasdaq.com/api/quote/TSLA/option-chain?assetclass=stocks&limit=6000&fromdate=all&todate=all&excode=oprac&callput=call&money=out&type=all'
+        res = requests.get(url, headers=get_headers())
+        df = pd.DataFrame(json.loads(res.text)['data']['table']['rows'])
+
+        df['expirygroup'].replace('',np.nan, inplace=True)
+        df['expirygroup'].ffill(inplace=True)
+        df['expirygroup']=pd.to_datetime(df.expirygroup)
+        df['expirygroup']=convert_dt_to_str(df.expirygroup.values)
+
+        df['drillDownURL']=df['drillDownURL'].apply(lambda x : f'https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@{x[59:] if x else x}&chscale=6m&chwid=700&chhig=300')
+        df.drillDownURL = df.drillDownURL.str.replace('--','  ').values
+
+
+        num_of_expirydts=len(sorted(df.expirygroup.unique()))
+        char_url = "https://app.quotemedia.com/quotetools/getChart?webmasterId=90423&symbol=@TSLA%20%20220916C01800000&chscale=6m&chwid=1000&chhig=300"
+
+        def get_evenly_divided_values(value_to_be_distributed, times):
+            return [value_to_be_distributed // times + int(x < value_to_be_distributed % times) for x in range(times)]
+        green_range = get_evenly_divided_values(255,num_of_expirydts)
+
+        dict_color=dict(zip(df.expirygroup.unique(), reversed(np.cumsum(green_range))))
+        df['color']=df.expirygroup.map(dict_color)
+
+        df[df.filter(regex='c_|p_|strike').columns] = df.filter(regex='c_|p_|strike').\
+            apply(pd.to_numeric,errors='coerce')
+        df=df[df.strike>160].copy()
+        print (f'{get_evenly_divided_values.__name__} : finished Data Manipulation')
+        self.df, self.dict_color = df, dict_color
+        return self.df, self.dict_color
+
+    def buil_leap_fig(self):
+
+        df, dict_color = self.get_nasdaq_leap_option_chain()
+        df['c_Volume_1'] = pd.to_numeric(df['c_Volume'].astype(str), errors='coerce').fillna(0)
+        df['c_Openinterest'] = pd.to_numeric(df['c_Openinterest'].astype(str), errors='coerce').fillna(0)
+        # StandardScaler().fit_transform(df['c_Openinterest'])
+        legendrank = 1001
+        spot = df.strike.min()
+        fig = go.Figure()
+        def marker_size_by_strike(strike,volume):
+            if strike > spot*1.:
+                return max(volume / 600, 0)
+            else:
+                return 0
+
+        for expirydt, df_expiry in df.groupby('expirygroup'):#[['strike', 'c_Last', 'color']]:
+            legendrank = int((pd.to_datetime(expirydt,format='%b %d %Y') - pd.Timestamp.today())/np.timedelta64(1,'D'))
+            fig.add_trace(
+                                go.Scatter(x=df_expiry['strike'], y=df_expiry['c_Last'], name=expirydt,text=df_expiry['expirygroup'],
+                                           mode='lines+markers', line_shape='spline', marker_color='rgb(0,0,255)', opacity=1.,
+                                           customdata=np.stack((df_expiry['c_Openinterest'], df_expiry['c_Volume_1']),
+                                                               axis=-1),
+                                           # marker=dict(
+                                           #     color='green',
+                                           #     size=3,
+                                           #     line=dict(
+                                           #         color='red',
+                                           #         width=1
+                                           #     )),
+                                           marker=dict(opacity=.3,
+                                               size=[marker_size_by_strike(strike,z) for strike,z in zip(df_expiry.strike.values,df_expiry.c_Openinterest.values)],
+                                               color=['green'] * len(df_expiry.c_Volume.values)),
+
+                                        hovertemplate=
+                                           "<b>%{text}</b><br><br>" +
+                                           "Strike: %{x:$,.0f}<br>" +
+                                           "Theta: %{y:.2f}<br>" +
+                                           "Openinterest: %{customdata[0]:,.0f}<br>" +
+                                           "Volume: %{customdata[1]:,.0f}<br>"
+                                           ,
+                                           line=dict(color=f'rgb(0,{dict_color.get(expirydt)},0)', width=1),
+                                           legendrank=legendrank)
+                                            )
+            # fig.add_trace(
+            #     go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Volume.values / 2, mode='markers',
+            #                name='Call Volume_' + expirydt,
+            #                marker=dict(size=[max(z / 100, 0) for z in df_expiry.c_Volume_1.fillna(0).values],
+            #                            color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.3, ))
+
+        fig.layout.update(dict(yaxis=dict(range=[0,df.c_Last.max()])))
+
+        fig.update_layout( xaxis_tickfont_size=14,
+                    height=600, width=1900,
+                    showlegend=True,
+                    )
         return fig

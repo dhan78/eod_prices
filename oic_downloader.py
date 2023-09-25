@@ -1,27 +1,37 @@
 import functools
-
+import sys
+sys.path.insert(0, '')
 from utils.pc_utils import *
 
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc, html, callback
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
+from itertools import count
+import flask
 
 
 
 
-
-
+counter = count()
 app = dash.Dash('Foo', external_stylesheets=[dbc.themes.BOOTSTRAP])
+dash.register_page(__name__, path="/")
+
 # app = dash.Dash()
 tickr = Ticker('TSLA')
 # current_price = tickr.get_lastSalePrice()
-fig = tickr.get_charts()
+fig = tickr.get_charts(show_volume=True)
 oc = OptionChart(None,None)
 figOption = None
 # {'display':'none'}
 # {'display':'block'}
+def get_client_cookie_counter():
+    allcookies, latest_counter = dict(flask.request.cookies), 0
+    if 'counter' in allcookies:
+        latest_counter = allcookies['counter']
+    return int(latest_counter)
+
+
 content_first_row = dbc.Row(
     [
         dbc.Col(
@@ -76,7 +86,7 @@ def get_option_chart_display(p_switch_value,p_DivName):
     else:
         return {'display': 'none'}
 
-@app.callback(
+@callback(
     [Output('graph', 'figure'),
      Output('option-chart-output', 'figure'),
      Output('slider-output-container', 'children'),
@@ -93,7 +103,7 @@ def get_option_chart_display(p_switch_value,p_DivName):
     [State('graph','figure'),State('target_close','value'),
      State('date_picker','start_date'),State('date_picker','end_date'),
      ],
-    prevent_initial_call=True
+    # prevent_initial_call=True
 )
 def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,switch_value, replay_history, figure,target_close,
                        start_date,end_date):
@@ -107,17 +117,19 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
             if 'showOptionHistory' not in switch_value : raise dash.exceptions.PreventUpdate # option Toggle is OFF
             curveNum = clickData['points'][0]['curveNumber']
             curveName = figure['data'][curveNum]['name']
-            if curveName.split()[0] not in ['C','P']: raise dash.exceptions.PreventUpdate # Clicked on Ratio chart
+            if curveName.split()[0][0] not in ['C','P']: raise dash.exceptions.PreventUpdate # Clicked on Ratio chart
             clickData['points'][0]['curveName'] = figure['data'][curveNum]['name']
             df_click = pd.DataFrame(clickData['points']).dropna(subset=['curveName'])
             df_click['expiry_dt'] = df_click.curveName.apply(lambda x: pd.to_datetime(x.split()[1]).strftime('%b %d'))
             oc = OptionChart(df_click.expiry_dt,df_click.x)
             return dash.no_update,oc.generate_fig(),target_close_text, toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
-        elif ctx.triggered[0]['prop_id'] == 'interval-component.n_intervals': # triggered by timer
+        elif ctx.triggered[0]['prop_id'] in ['.','interval-component.n_intervals']: # triggered by inital_load ('.') or timer
             tickr.get_lastSalePrice()
             # if tickr.state == OIC_State.RUNNING:
             print (f'Previous call status: {tickr.state}')
             if tickr.marketStatus == 'Market Closed': raise dash.exceptions.PreventUpdate()
+            print (f'Client counter is : {get_client_cookie_counter()}')
+            dash.callback_context.response.set_cookie('counter', str(next(counter)))
 
             return tickr.get_charts(),dash.no_update,target_close_text,toggle_display('showOptionHistory'),toggle_display('ReplayHistory'),dash.no_update
         elif ctx.triggered[0]['prop_id'] == 'target_close.value': # triggered by changing target_close
@@ -145,5 +157,6 @@ def display_click_data(target_closing_price, clickData,n_intervals, n_clicks,swi
 
 
 
-
-app.run_server(debug=True, host='0.0.0.0',threaded=True)  # Turn off reloader if inside Jupyter
+if __name__ == '__main__':
+    # pass
+    app.run_server(debug=True, host='0.0.0.0',threaded=True)  # Turn off reloader if inside Jupyter

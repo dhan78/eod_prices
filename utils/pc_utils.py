@@ -382,7 +382,7 @@ class Ticker():
 
         fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, horizontal_spacing=0.06, print_grid=True,
                             specs=[[{"secondary_y": True}, {"secondary_y": True}]] * num_or_charts)
-        y_max = df.filter(regex='Openinterest').apply(pd.to_numeric, errors='coerce').max(axis=1).max()*1.1
+        y_max = df.filter(regex='Openinterest').apply(pd.to_numeric, errors='coerce').max(axis=1).max()*1.5
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             expirydt = expiry[0][0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
             df_expiry = expiry[1]
@@ -523,7 +523,7 @@ class Ticker():
                 bordercolor='rgba(255, 255, 255, 0)'
             ),
             hovermode='x unified',
-            barmode='group',
+            barmode='stack',
             # bargap=0.15,  # gap between bars of adjacent location coordinates.
             bargroupgap=0.,  # gap between bars of the same location coordinate.
             # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour

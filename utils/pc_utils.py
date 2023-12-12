@@ -27,6 +27,10 @@ import pandas as pd
 from enum import Enum, auto
 import time
 
+os.environ["http_proxy"]='http://proxy.jpmchase.net:8080'
+os.environ["https_proxy"]='http://proxy.jpmchase.net:8443' 
+
+
 def get_yahoo_session():
     session = requests_cache.CachedSession('yfinance.cache')
     session.headers['User-agent'] = 'my-x1carbon/1.02' + str(random.random())
@@ -382,7 +386,7 @@ class Ticker():
 
         fig = make_subplots(rows=num_or_charts, cols=2, vertical_spacing=0.03, horizontal_spacing=0.06, print_grid=True,
                             specs=[[{"secondary_y": True}, {"secondary_y": True}]] * num_or_charts)
-        y_max = df.filter(regex='Openinterest').apply(pd.to_numeric, errors='coerce').max(axis=1).max()*1.5
+        y_max = df.filter(regex='Openinterest').apply(pd.to_numeric, errors='coerce').max(axis=1).max()*1.1
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
             expirydt = expiry[0][0].strftime('%B-%d-%Y') if not isinstance(expiry[0], str) else expiry[0]
             df_expiry = expiry[1]
@@ -398,40 +402,52 @@ class Ticker():
             # df_expiry['c_Volume_1'] = StandardScaler().fit_transform(df_expiry['c_Volume_1'].values)
 
             # Call Open Interest
-            # fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values,
-            #                         name='Call Open Interest_' + expirydt, marker_color='rgb(0,128,0)', opacity=.8,
-            #                         width=.6), row=i + 1, col=1, )
+            #fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values,
+            #                        name='Call Open Interest_' + expirydt, marker_color='rgb(0,128,0)', opacity=.8,
+            #                        width=.6), row=i + 1, col=1, )
             fig.add_trace(go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values, fill='tozeroy',
-                                     name='Call Open Interest'+ expirydt, marker_color='rgb(0,128,0)', opacity=.8,
-                                     ), row=i + 1, col=1, )
+                                     name='Call Open Interest'+ expirydt, marker_color='rgb(0,128,0)', opacity=.05,
+                                     mode='lines', line_shape='spline', line=dict(width=0.5)
+                                     ), row=i + 1, col=1, )            
             # Put Open Interest
-            # fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values,
-            #                         name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.8,
-            #                         width=.6), row=i + 1, col=1)
+            #fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values,
+            #                        name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.8,
+            #                        width=.6), row=i + 1, col=1)
             fig.add_trace(go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values, fill='tozeroy',
-                                 name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.8,
-                                 ), row=i + 1, col=1)
-
-
+                                 name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.05,
+                                 mode='lines', line_shape='spline', line=dict(width=0.5)
+                                 ), row=i + 1, col=1)                                    
             # Call Volume
-            fig.add_trace(
-                go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values/2, mode='markers',
-                           name='',#'Call Volume_' + expirydt,
-                           text=df_expiry.c_Volume_1_orig.values,
-                           hovertemplate="Call Volume: %{text:,}",
-                           marker=dict(size=[z/100 for z in df_expiry.c_Volume_1.fillna(0).values],
-                                       color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.2, ),
-                row=i + 1, col=1)
+            #fig.add_trace(
+            #    go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values/2, mode='markers',
+            #               name='',#'Call Volume_' + expirydt,
+            #               text=df_expiry.c_Volume_1_orig.values,
+            #               hovertemplate="Call Volume: %{text:,}",
+            #               marker=dict(size=[z/100 for z in df_expiry.c_Volume_1.fillna(0).values],
+            #                           color=['rgb(6, 171, 39)'] * len(df_expiry.c_Volume.values)), opacity=.2, ),
+            #    row=i + 1, col=1)
+            fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Volume_1.values,
+                                    name='', #Put Open Interest_' + expirydt, 
+                                    text=df_expiry.c_Volume_1_orig.values,
+                                    hovertemplate="Call Volume: %{text:,}",
+                                    marker_color='rgb(6, 171, 39)', opacity=.2, yaxis="y3",
+                                    width=.2), row=i + 1, col=1)
+                
             # Put Volume
-            fig.add_trace(
-                go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values/2, mode='markers',
-                           name='',#'Put Volume_' + expirydt,
-                           text=df_expiry.p_Volume_1_orig.values,
-                           hovertemplate="Put Volume: %{text:,}",
-                           marker=dict(size=[z/100 for z in df_expiry.p_Volume_1.fillna(0).values],
-                                       color=['rgb(300,0,0)'] * len(df_expiry.c_Volume.values)), opacity=.2, ),
-                row=i + 1, col=1)
-
+            #fig.add_trace(
+            #    go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values/2, mode='markers',
+            #               name='',#'Put Volume_' + expirydt,
+            #               text=df_expiry.p_Volume_1_orig.values,
+            #               hovertemplate="Put Volume: %{text:,}",
+            #               marker=dict(size=[z/100 for z in df_expiry.p_Volume_1.fillna(0).values],
+            #                           color=['rgb(300,0,0)'] * len(df_expiry.c_Volume.values)), opacity=.2, ),
+            #    row=i + 1, col=1)
+            fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Volume_1.values,
+                                    name='', #Put Open Interest_' + expirydt, 
+                                    text=df_expiry.p_Volume_1_orig.values,
+                                    hovertemplate="Put Volume: %{text:,}",
+                                    marker_color='rgb(225, 0, 0)', opacity=.2, yaxis="y3",
+                                    width=.2), row=i + 1, col=1)
 
             # #Call/Put Ratio
             fig.add_trace(
@@ -531,7 +547,7 @@ class Ticker():
                 bordercolor='rgba(255, 255, 255, 0)'
             ),
             hovermode='x unified',
-            barmode='stack',
+            barmode='group',
             # bargap=0.15,  # gap between bars of adjacent location coordinates.
             bargroupgap=0.,  # gap between bars of the same location coordinate.
             # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour

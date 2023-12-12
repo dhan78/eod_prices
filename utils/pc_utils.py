@@ -396,8 +396,8 @@ class Ticker():
             df_expiry['p_c_ratio'] = df_expiry.p_Openinterest / df_expiry.c_Openinterest
             custom_feature_range = (0,df_expiry[['c_Openinterest','p_Openinterest']].max().max())
             df_expiry[['c_Volume_1_orig', 'p_Volume_1_orig']]=df_expiry[['c_Volume_1', 'p_Volume_1']]
-            df_expiry[['c_Volume_1', 'p_Volume_1']] = MinMaxScaler(feature_range=custom_feature_range).fit_transform(
-                df_expiry[['c_Volume_1', 'p_Volume_1']].values)
+            #df_expiry[['c_Volume_1', 'p_Volume_1']] = MinMaxScaler(feature_range=custom_feature_range).fit_transform(
+            #    df_expiry[['c_Volume_1', 'p_Volume_1']].values)
             # df_expiry['p_Volume_1'] = StandardScaler().fit_transform(df_expiry['p_Volume_1'].values)
             # df_expiry['c_Volume_1'] = StandardScaler().fit_transform(df_expiry['c_Volume_1'].values)
 
@@ -406,16 +406,16 @@ class Ticker():
             #                        name='Call Open Interest_' + expirydt, marker_color='rgb(0,128,0)', opacity=.8,
             #                        width=.6), row=i + 1, col=1, )
             fig.add_trace(go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_Openinterest.values, fill='tozeroy',
-                                     name='Call Open Interest'+ expirydt, marker_color='rgb(0,128,0)', opacity=.05,
-                                     mode='lines', line_shape='spline', line=dict(width=0.5)
+                                     name='Call Open Interest'+ expirydt, opacity=.05,
+                                     mode='lines', line_shape='spline', line=dict(width=0.5,color='rgb(0,128,0)')
                                      ), row=i + 1, col=1, )            
             # Put Open Interest
             #fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values,
             #                        name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.8,
             #                        width=.6), row=i + 1, col=1)
             fig.add_trace(go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_Openinterest.values, fill='tozeroy',
-                                 name='Put Open Interest_' + expirydt, marker_color='rgb(225, 0, 0)', opacity=.05,
-                                 mode='lines', line_shape='spline', line=dict(width=0.5)
+                                 name='Put Open Interest_' + expirydt, opacity=.05,
+                                 mode='lines', line_shape='spline', line=dict(width=0.5,color='rgb(128, 0, 0)')
                                  ), row=i + 1, col=1)                                    
             # Call Volume
             #fig.add_trace(
@@ -429,9 +429,10 @@ class Ticker():
             fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.c_Volume_1.values,
                                     name='', #Put Open Interest_' + expirydt, 
                                     text=df_expiry.c_Volume_1_orig.values,
+                                    textposition = "none",
                                     hovertemplate="Call Volume: %{text:,}",
-                                    marker_color='rgb(6, 171, 39)', opacity=.2, yaxis="y3",
-                                    width=.2), row=i + 1, col=1)
+                                    marker_color='rgb(6, 171, 39)', opacity=.9, 
+                                    ), row=i + 1, col=1,secondary_y=True)
                 
             # Put Volume
             #fig.add_trace(
@@ -445,20 +446,21 @@ class Ticker():
             fig.add_trace(go.Bar(x=df_expiry.strike.values, y=df_expiry.p_Volume_1.values,
                                     name='', #Put Open Interest_' + expirydt, 
                                     text=df_expiry.p_Volume_1_orig.values,
+                                    textposition = "none",
                                     hovertemplate="Put Volume: %{text:,}",
-                                    marker_color='rgb(225, 0, 0)', opacity=.2, yaxis="y3",
-                                    width=.2), row=i + 1, col=1)
+                                    marker_color='rgb(225, 0, 0)', opacity=.9, 
+                                    ), row=i + 1, col=1,secondary_y=True)
 
             # #Call/Put Ratio
-            fig.add_trace(
-                go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_p_ratio.values, name='c_p_Ratio ' + expirydt,
-                           mode='lines', line_shape='spline', marker_color='rgb(0,300,0)', opacity=.7,
-                           line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
+            #fig.add_trace(
+            #    go.Scatter(x=df_expiry.strike.values, y=df_expiry.c_p_ratio.values, name='c_p_Ratio ' + expirydt,
+            #               mode='lines', line_shape='spline', marker_color='rgb(0,300,0)', opacity=.7,
+            #               line=dict(color='rgb(0,128,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
             # #Put/Call Ratio
-            fig.add_trace(
-                go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_c_ratio.values, name='p_c_Ratio ' + expirydt,
-                           mode='lines', line_shape='spline', marker_color='rgb(300,0,0)', opacity=.7,
-                           line=dict(color='rgb(255,0,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
+            #fig.add_trace(
+            #    go.Scatter(x=df_expiry.strike.values, y=df_expiry.p_c_ratio.values, name='p_c_Ratio ' + expirydt,
+            #               mode='lines', line_shape='spline', marker_color='rgb(300,0,0)', opacity=.7,
+            #               line=dict(color='rgb(255,0,0)', width=1, )), row=i + 1, col=1, secondary_y=True)
 
             # Current Price
             fig.add_trace(go.Scatter(
@@ -478,7 +480,7 @@ class Ticker():
             fig.update_xaxes(row=i + 1, col=1, dtick=2.5, tickangle=-60)
             title_text = expiry[0][0] if isinstance(expiry[0], str) else expiry[0][0].strftime('%B-%d-%Y')
             fig.update_yaxes(title_text=title_text, range=[0, y_max], row=i + 1, col=1, secondary_y=False)
-            fig.update_yaxes(range=[0, 10], row=i + 1, col=1, secondary_y=True)
+            fig.update_yaxes(range=[0, 100000], row=i + 1, col=1, secondary_y=True)
             fig.add_vline(x=lastSalePrice, line_dash='dash', line_color='black', line_width=.6, row=i + 1, col=1)
 
         for i, expiry in enumerate(df.sort_values(by=['expirygroup']).groupby(['expirygroup'])):
@@ -548,8 +550,8 @@ class Ticker():
             ),
             hovermode='x unified',
             barmode='group',
-            # bargap=0.15,  # gap between bars of adjacent location coordinates.
-            bargroupgap=0.,  # gap between bars of the same location coordinate.
+            bargap=.8,  # gap between bars of adjacent location coordinates.
+            #bargroupgap=0.,  # gap between bars of the same location coordinate.
             # plot_bgcolor = 'rgb(184, 189, 234)',  # set the background colour
         )
 

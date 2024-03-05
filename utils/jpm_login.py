@@ -7,12 +7,15 @@ import time
 import subprocess
 import fnmatch
 from itertools import count
+from selenium.webdriver.firefox.options import Options
+
 
 counter = count()
 pcode = sys.argv[1]
 JPM_USER = os.getenv('JPM_USER')
 JPM_PASSWORD = os.getenv('JPM_PASSWORD')
 JPM_LOGIN_URL = 'http://myworkspace.jpmchase.com'
+download_folder = '/home/admin/Downloads'
 
 from selenium import webdriver
 
@@ -41,62 +44,30 @@ def wait_and_click(x_path, **kwargs):
     else:
         raise
 
-
-def open_chrome_browser():
-
-    from selenium import webdriver
-    from selenium.webdriver.chrome.service import Service
-    from webdriver_manager.chrome import ChromeDriverManager
-    from selenium.webdriver.common.by import By
-
-    s=Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=s)
-
-    options = webdriver.ChromeOptions()
-    options.add_argument("--incognito")
-    options.binary_location="/usr/local/bin/chromium"
-    # options.add_argument("--headless")
-    browser = webdriver.Chrome(executable_path='/usr/bin/chromedriver', options=options)
-    browser.maximize_window()
-    browser.get(JPM_LOGIN_URL)
-    return browser
-
-
-def open_firefox_browser():
-    from selenium import webdriver
-    from selenium.webdriver.firefox.options import Options
-    from selenium.webdriver.firefox.service import Service
-
+def open_firefox_flatpak():
+    # Set up Firefox options
     options = Options()
-    options.binary_location = r'/usr/bin/firefox'
-    # options.binary_location = r'/var/lib/flatpak/exports/bin/org.mozilla.firefox'
-    # options.add_argument("--profile /home/admin/.mozilla")
-    # options.add_argument("--private")
+    #options.binary_location = firefox_binary_path
 
-
-    driverService = Service(r'/usr/bin/geckodriver')
-    browser = webdriver.Firefox(service= driverService, options=options,)
-    # options.add_argument("--incognito")
-    # options.add_argument("--headless")
-    # browser = webdriver.Chrome(options=options)
-    # browser.maximize_window()
+    # Create a Firefox webdriver with the specified options
+    browser = webdriver.Firefox(options=options)
     browser.get(JPM_LOGIN_URL)
     return browser
 
 
-download_folder = '/home/admin/Downloads'
 
 removeFilesByMatchingPattern(download_folder, '*.ica')
 
 # driver = open_chrome_browser()
-driver = open_firefox_browser()
+# driver = open_firefox_browser()
+driver = open_firefox_flatpak()
 
 
 wait_and_click('//*[@id="login"]', send_key=JPM_USER)
-wait_and_click('//*[@id="passwd1"]', send_key=JPM_PASSWORD)
-wait_and_click('//*[@id="passwd"]', send_key=pcode)
-wait_and_click('//*[@id="loginBtn"]', click=True)
+wait_and_click('(//input[@type="password"])[1]', send_key=JPM_PASSWORD)
+wait_and_click('(//input[@type="password"])[2]', send_key=pcode)
 
+wait_and_click('//*[@id="loginBtn"]', click=True)
 
 wait_and_click('//*[@id="protocolhandler-welcome-installButton"]', click=True)
 wait_and_click('//*[@id="protocolhandler-detect-alreadyInstalledLink"]', click=True)

@@ -27,8 +27,8 @@ import pandas as pd
 from enum import Enum, auto
 import time
 
-os.environ["http_proxy"]='http://proxy.jpmchase.net:8080'
-os.environ["https_proxy"]='http://proxy.jpmchase.net:8443' 
+# os.environ["http_proxy"]='http://proxy.jpmchase.net:8080'
+# os.environ["https_proxy"]='http://proxy.jpmchase.net:8443'
 
 
 def get_yahoo_session():
@@ -328,7 +328,7 @@ class Ticker():
 
 
         df['expirygroup'] = df['expirygroup'].apply(lambda x: pd.to_datetime(x))
-        df['expirygroup'].ffill(axis=0, inplace=True)
+        df['expirygroup']=df['expirygroup'].ffill(axis=0)
         df.dropna(inplace=True)
         df['load_dt'] = datetime.today().strftime('%Y-%m-%d')
         df['load_tm'] = datetime.today().strftime('%H:%M:%S')
@@ -699,8 +699,8 @@ class Nasdaq_Leap():
         res = requests.get(url, headers=get_headers())
         df = pd.DataFrame(json.loads(res.text)['data']['table']['rows'])
 
-        df['expirygroup'].replace('',np.nan, inplace=True)
-        df['expirygroup'].ffill(inplace=True)
+        df['expirygroup']=df['expirygroup'].replace('',np.nan)
+        df['expirygroup']=df['expirygroup'].ffill()
         df['expirygroup']=pd.to_datetime(df.expirygroup)
         df['expirygroup']=convert_dt_to_str(df.expirygroup.values)
 

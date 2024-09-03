@@ -11,6 +11,8 @@ import fnmatch
 from itertools import count
 from selenium.webdriver.firefox.options import Options
 from selenium import webdriver
+from dotenv import load_dotenv
+
 inbde_url= "https://boosterprep.com/sign-in"
 login_xpath =  '//input[@id="email"]'
 pass_xpath =  '//input[@id="password"]'

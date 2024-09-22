@@ -74,7 +74,7 @@ wait_and_click('//*[@id="protocolhandler-detect-alreadyInstalledLink"]', click=T
 
 wait_and_click('//*[@id="jpmcAcceptDisclaimerBtn"]', click=True)
 
-wait_and_click('//*[@class="storeapp-name"  and contains(text(),"WorkSpace Enterprise")]',click=True)
+wait_and_click('//*[@class="storeapp-name"  and contains(text(),"WorkSpace Enterprise_CDC1")]',click=True)
 wait_and_click('//*[@class="theme-highlight-color appDetails-actions-text" and contains(text(),"Open") ]',click=True)
 
 ica_file = download_wait(download_folder, '*.ica')

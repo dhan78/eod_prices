@@ -6,6 +6,9 @@ L explanation: https://youtu.be/8i9bo5wLSE4?t=1546
 
 Typedispatch discussion: https://youtu.be/GcMGchBJeXk?t=1928 
 
+jdlab important links
+https://www.cad-ray.com/milling-machines/
+
 Leetcode top 25 Questions with explanations:
 
 https://docs.google.com/spreadsheets/d/1HeA6bKWBhOKxYtLEVd_F7nhNv23M4BI8FIFABUtgGkA/edit#gid=0

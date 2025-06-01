@@ -1,4 +1,28 @@
+# Python compiled files
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Python virtual environment
+venv/
+env/
+.env/
+
+# IDE files
+.idea/
+.vscode/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Log files
+*.log
+logfile
+nohup.out
+
 /.idea/.gitignore
 data_store.sqlite
 /venv/
-.env

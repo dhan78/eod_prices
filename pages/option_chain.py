@@ -15,7 +15,7 @@ import dash
 from dash import Dash, dcc, html, callback
 from dash.dependencies import Input, Output, State
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+# app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 dash.register_page(__name__, path='/display_option_chain',
                    title='LEAP Options',
                    name='LEAP Options')

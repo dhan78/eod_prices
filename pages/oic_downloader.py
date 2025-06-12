@@ -13,7 +13,7 @@ import flask
 
 
 counter = count()
-app = dash.Dash('Foo', external_stylesheets=[dbc.themes.BOOTSTRAP])
+# app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 dash.register_page(__name__, path='/',
                    title='PUT CALL Option chain',
                    name='PUT CALL Option chain')

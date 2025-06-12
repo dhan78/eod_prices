@@ -1,1 +1,70 @@
 nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
+
+
+dr Sarala: 
+Thyroid unnecessary medicine explanation: https://youtu.be/Mh5b0PCGG3M?t=5196
+
+
+
+
+
+https://www.youtube.com/watch?v=T8hD-gS_cFw (AWS CKAD tips. Very good)
+https://www.youtube.com/watch?v=LFMp-DgJtoo&list=PLpbwBK0ptssyIgAoHR-611wt3O9wobS8T  (CKAD killer shell walkthrough. Very good)
+
+
+korapathy
+batholey
+chamkodey
+dakoskey
+
+
+https://www.youtube.com/watch?v=Ad-inC3mJfU&t=127s
+
+
+https://www.youtube.com/watch?v=6OxqiEeCvMI (Python Dev Containers + DEBUGGING )
+https://www.youtube.com/watch?v=qCCj7qy72Bg (old video.. but the guy explains well)
+
+https://www.youtube.com/watch?v=Ad-inC3mJfU&t=127s ( pythonpath & launch/settings.json)
+
+https://www.youtube.com/watch?v=49j53WPFFZk (fastapi uvicorn debugging , shows intersting config in launch.json)
+https://www.youtube.com/watch?v=j-oOwDlNRv8&t=45s  python -m debugpy --listen 0.0.0.0:8888 --wait-for-client main.py
+
+Dental LAB: 
+https://www.pro-craft.com/shipping-faqs (Very Good site)
+https://www.meetdandy.com/ Fantastic online workflow
+
+AWS deployment (NextJS)
+---------------------------------------------------------------
+https://www.youtube.com/watch?v=KAV8vo7hGAo  (Stats at 7:33 )
+---------------------------------------------------------------
+AWS file uploader with thumbnails:
+--------------------------------------------
+https://www.youtube.com/watch?v=l9_se9Fo-0U
+--------------------------------------------
+NJ Portal: (business registration)
+https://www.njportal.com/DOR/BusinessRegistration/Home/FirstStep
+
+
+admin@jdlab.us
+admin123
+
+
+http://localhost:3000
+http://localhost:3000/api/auth/callback/google
+
+https://www.youtube.com/shorts/aIgd_FRqkF4 (cold drink)
+
+Horizontal pod autoscaling: 
+https://www.youtube.com/watch?v=jyBDbm1FHiM&t=176s
+
+pod roles: 
+kubectl can-i commands to check roles and privs
+https://www.youtube.com/watch?v=ECTxTONWgw8&list=TLPQMTEwNTIwMjXBYmeXIaZi6w&index=3
+
+CKAD certifcation
+https://github.com/dgkanatsios/CKAD-exercises/blob/main/README.md
+
+
+Python ASYNC/AWAIT
+https://www.youtube.com/watch?v=1z8LLSZSWHM
+

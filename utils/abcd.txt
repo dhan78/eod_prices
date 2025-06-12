@@ -1,0 +1,1 @@
+nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &

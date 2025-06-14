@@ -22,16 +22,44 @@ from selenium.webdriver.support.ui import WebDriverWait
 @dataclass
 class WorkspaceConfig:
     """Configuration settings for JPM workspace."""
-    username: str = os.getenv("JPM_USER", "")
-    password: str = os.getenv("JPM_PASSWORD", "")
+    username: str = ""
+    password: str = ""
     url: str = "http://myworkspace.jpmchase.com"
     download_dir: Path = Path.home() / "Downloads"
     ica_path: Path = Path("/opt/Citrix/ICAClient/wfica.sh")
 
+    def __post_init__(self):
+        """Initialize after dataclass creation, source env vars if needed."""
+        self.username = os.getenv("JPM_USER", "")
+        self.password = os.getenv("JPM_PASSWORD", "")
+        
+        if not self.username or not self.password:
+            self._source_bashrc()
+
+    def _source_bashrc(self) -> None:
+        """Source credentials from .bashrc file."""
+        bashrc_path = Path.home() / ".bashrc"
+        if not bashrc_path.exists():
+            return
+
+        try:
+            with open(bashrc_path, 'r') as f:
+                bashrc_content = f.read()
+            
+            # Parse JPM credentials from bashrc
+            for line in bashrc_content.splitlines():
+                if line.startswith("export JPM_USER="):
+                    self.username = line.split("=")[1].strip('"\'')
+                elif line.startswith("export JPM_PASSWORD="):
+                    self.password = line.split("=")[1].strip('"\'')
+
+        except Exception as e:
+            print(f"Error reading .bashrc: {e}")
+
     def validate(self) -> None:
         """Validate configuration settings."""
         if not self.username or not self.password:
-            raise ValueError("JPM_USER and JPM_PASSWORD environment variables required")
+            raise ValueError("JPM_USER and JPM_PASSWORD not found in environment or .bashrc")
         if not self.ica_path.exists():
             raise FileNotFoundError(f"ICA client not found at {self.ica_path}")
 
@@ -102,19 +130,19 @@ class WorkspaceAutomation:
         self._wait_for_element(self.XPATHS["submit"]).click()
         self._print("Login completed")
 
-    def _setup_handlers(self) -> None:
-        """Configure protocol handlers."""
-        self._print("Configuring protocol handlers...")
-        for action in ["install", "detect", "disclaimer"]:
+    def _setup_and_launch(self) -> None:
+        """Configure protocol handlers and launch workspace application."""
+        self._print("Setting up handlers and launching workspace...")
+        
+        # Configure protocol handlers
+        handlers = ["install", "detect", "disclaimer"]
+        for action in handlers:
             self._wait_for_element(self.XPATHS[action]).click()
-        self._print("Handlers configured")
-
-    def _launch_workspace(self) -> None:
-        """Launch workspace application."""
-        self._print("Launching workspace application...")
+        
+        # Launch workspace
         self._wait_for_element(self.XPATHS["workspace"]).click()
         self._wait_for_element(self.XPATHS["open"]).click()
-        self._print("Workspace launched")
+        self._print("Workspace setup and launch completed")
 
     def _start_ica_client(self, ica_file: Path) -> None:
         """Launch ICA client with downloaded file."""
@@ -132,8 +160,7 @@ class WorkspaceAutomation:
             self._clean_ica_files()
             self._setup_driver()
             self._login()
-            self._setup_handlers()
-            self._launch_workspace()
+            self._setup_and_launch()  # Using the combined method
             ica_file = self._wait_for_download()
             self._start_ica_client(ica_file)
             self._print("Workspace automation completed successfully")

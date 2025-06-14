@@ -1,87 +1,164 @@
+"""
+JPMorgan Workspace Login Automation Module.
+Handles automated login and ICA client launch for JPM Workspace.
+"""
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.remote.webelement import WebElement
 from selenium import webdriver
-from itertools import count
 import subprocess
-import glob
 import time
 import sys
 import os
 
 
-def remove_files_by_matching_pattern(dir_path: str, pattern: str) -> None:
-    """Delete all files from a given directory based on matching pattern."""
-    [os.remove(fn) for fn in glob.glob(f'{dir_path}/{pattern}')]
+@dataclass
+class WorkspaceConfig:
+    """Configuration settings for JPM workspace."""
+    username: str = os.getenv('JPM_USER', '')
+    password: str = os.getenv('JPM_PASSWORD', '')
+    url: str = 'http://myworkspace.jpmchase.com'
+    download_dir: Path = Path.home() / 'Downloads'
+    ica_path: Path = Path('/opt/Citrix/ICAClient/wfica.sh')
+
+    def validate(self) -> None:
+        """Validate configuration settings."""
+        if not self.username or not self.password:
+            raise ValueError("JPM_USER and JPM_PASSWORD environment variables required")
+        if not self.ica_path.exists():
+            raise FileNotFoundError(f"ICA client not found at {self.ica_path}")
 
 
-def download_wait(poll_folder: str, pattern: str) -> str:
-    """Wait for and return the first matching file in the poll folder."""
-    while not (ica_file := glob.glob(f'{poll_folder}/{pattern}')):
-        print(f'{next(counter)} Waiting for ica file in {poll_folder}...')
-        time.sleep(1)
-    return ica_file[0]
+class WorkspaceAutomation:
+    """Handles JPMorgan Workspace automation."""
+
+    XPATHS = {
+        'login': '//*[@id="login"]',
+        'password1': '(//input[@type="password"])[1]',
+        'password2': '(//input[@type="password"])[2]',
+        'submit': '//*[@id="loginBtn"]',
+        'install': '//*[@id="protocolhandler-welcome-installButton"]',
+        'detect': '//*[@id="protocolhandler-detect-alreadyInstalledLink"]',
+        'disclaimer': '//*[@id="jpmcAcceptDisclaimerBtn"]',
+        'workspace': '//*[@class="storeapp-name" and contains(text(),"CDC2")]',
+        'open': '//*[@class="theme-highlight-color appDetails-actions-text" and contains(text(),"Open")]'
+    }
+
+    def __init__(self, config: WorkspaceConfig, passcode: str):
+        """Initialize automation with configuration and passcode."""
+        self.config = config
+        self.passcode = passcode
+        self.driver: Optional[webdriver.Firefox] = None
+        self.config.validate()
+
+    def _print(self, message: str) -> None:
+        """Print status message with timestamp."""
+        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+        print(f"[{timestamp}] {message}")
+
+    def _wait_for_element(self, xpath: str, timeout: int = 20) -> WebElement:
+        """Wait for element and return when clickable."""
+        return WebDriverWait(self.driver, timeout).until(
+            EC.element_to_be_clickable((By.XPATH, xpath))
+        )
+
+    def _clean_ica_files(self) -> None:
+        """Remove existing ICA files from download directory."""
+        for ica_file in self.config.download_dir.glob('*.ica'):
+            ica_file.unlink()
+            self._print(f"Removed ICA file: {ica_file}")
+
+    def _wait_for_download(self) -> Path:
+        """Wait for and return new ICA file."""
+        self._print("Waiting for ICA file download...")
+        while True:
+            ica_files = list(self.config.download_dir.glob('*.ica'))
+            if ica_files:
+                self._print(f"Found ICA file: {ica_files[0]}")
+                return ica_files[0]
+            time.sleep(1)
+
+    def _setup_driver(self) -> None:
+        """Initialize Firefox webdriver."""
+        self._print("Initializing Firefox webdriver...")
+        options = Options()
+        self.driver = webdriver.Firefox(options=options)
+        self.driver.get(self.config.url)
+        self._print("Browser opened and navigated to workspace URL")
+
+    def _login(self) -> None:
+        """Execute login sequence."""
+        self._print("Starting login sequence...")
+        self._wait_for_element(self.XPATHS['login']).send_keys(self.config.username)
+        self._wait_for_element(self.XPATHS['password1']).send_keys(self.config.password)
+        self._wait_for_element(self.XPATHS['password2']).send_keys(self.passcode)
+        self._wait_for_element(self.XPATHS['submit']).click()
+        self._print("Login completed")
+
+    def _setup_handlers(self) -> None:
+        """Configure protocol handlers."""
+        self._print("Configuring protocol handlers...")
+        for action in ['install', 'detect', 'disclaimer']:
+            self._wait_for_element(self.XPATHS[action]).click()
+        self._print("Handlers configured")
+
+    def _launch_workspace(self) -> None:
+        """Launch workspace application."""
+        self._print("Launching workspace application...")
+        self._wait_for_element(self.XPATHS['workspace']).click()
+        self._wait_for_element(self.XPATHS['open']).click()
+        self._print("Workspace launched")
+
+    def _start_ica_client(self, ica_file: Path) -> None:
+        """Launch ICA client with downloaded file."""
+        self._print(f"Starting ICA client with file: {ica_file}")
+        subprocess.Popen(
+            [str(self.config.ica_path), str(ica_file)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+    def run(self) -> None:
+        """Execute complete automation sequence."""
+        self._print("Starting workspace automation...")
+        try:
+            self._clean_ica_files()
+            self._setup_driver()
+            self._login()
+            self._setup_handlers()
+            self._launch_workspace()
+            ica_file = self._wait_for_download()
+            self._start_ica_client(ica_file)
+            self._print("Workspace automation completed successfully")
+        except Exception as e:
+            self._print(f"Error during automation: {e}")
+            raise
+        finally:
+            if self.driver:
+                self.driver.quit()
+                self._print("Browser closed")
 
 
-def wait_and_click(x_path: str, **kwargs) -> None:
-    """Wait for element to be clickable and perform action."""
-    obj = WebDriverWait(driver, 20).until(
-        EC.element_to_be_clickable((By.XPATH, x_path))
-    )
-    if 'send_key' in kwargs:
-        obj.send_keys(kwargs.get('send_key'))
-    elif 'click' in kwargs:
-        obj.click()
-    else:
-        raise ValueError("Either 'send_key' or 'click' must be provided")
+def main() -> None:
+    """Script entry point."""
+    if len(sys.argv) != 2:
+        print("Usage: python jpm_login.py <passcode>")
+        sys.exit(1)
+
+    try:
+        config = WorkspaceConfig()
+        automation = WorkspaceAutomation(config, sys.argv[1])
+        automation.run()
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 
-def open_firefox_flatpak() -> webdriver.Firefox:
-    """Initialize and return Firefox webdriver."""
-    options = Options()
-    browser = webdriver.Firefox(options=options)
-    browser.get(JPM_LOGIN_URL)
-    return browser
-
-
-# Constants and configuration
-counter = count()
-pcode = sys.argv[1]
-JPM_USER = os.getenv('JPM_USER')
-JPM_PASSWORD = os.getenv('JPM_PASSWORD')
-JPM_LOGIN_URL = 'http://myworkspace.jpmchase.com'
-DOWNLOAD_FOLDER = '/home/admin/Downloads'
-ICA_CLIENT_PATH = '/opt/Citrix/ICAClient/wfica.sh'
-
-# Main execution
 if __name__ == "__main__":
-    remove_files_by_matching_pattern(DOWNLOAD_FOLDER, '*.ica')
-    driver = open_firefox_flatpak()
-
-    # Login sequence
-    wait_and_click('//*[@id="login"]', send_key=JPM_USER)
-    wait_and_click('(//input[@type="password"])[1]', send_key=JPM_PASSWORD)
-    wait_and_click('(//input[@type="password"])[2]', send_key=pcode)
-    wait_and_click('//*[@id="loginBtn"]', click=True)
-
-    # Protocol handler setup
-    wait_and_click('//*[@id="protocolhandler-welcome-installButton"]', click=True)
-    wait_and_click('//*[@id="protocolhandler-detect-alreadyInstalledLink"]', click=True)
-    wait_and_click('//*[@id="jpmcAcceptDisclaimerBtn"]', click=True)
-
-    # Workspace selection
-    wait_and_click('//*[@class="storeapp-name"  and contains(text(),"CDC2")]',click=True)
-    wait_and_click('//*[@class="theme-highlight-color appDetails-actions-text" and contains(text(),"Open") ]',click=True)
-    # Handle ICA file
-    ica_file = download_wait(DOWNLOAD_FOLDER, '*.ica')
-    cmd_line = f'{ICA_CLIENT_PATH} {ica_file}'
-    subprocess.Popen(
-        cmd_line,
-        shell=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
-
-    driver.quit()
-    print(f'{next(counter)} Opened ica window. Close this terminal')
+    main()

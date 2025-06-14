@@ -3,29 +3,30 @@ JPMorgan Workspace Login Automation Module.
 Handles automated login and ICA client launch for JPM Workspace.
 """
 
+import os
+import sys
+import time
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.remote.webelement import WebElement
-from selenium import webdriver
-import subprocess
-import time
-import sys
-import os
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 @dataclass
 class WorkspaceConfig:
     """Configuration settings for JPM workspace."""
-    username: str = os.getenv('JPM_USER', '')
-    password: str = os.getenv('JPM_PASSWORD', '')
-    url: str = 'http://myworkspace.jpmchase.com'
-    download_dir: Path = Path.home() / 'Downloads'
-    ica_path: Path = Path('/opt/Citrix/ICAClient/wfica.sh')
+    username: str = os.getenv("JPM_USER", "")
+    password: str = os.getenv("JPM_PASSWORD", "")
+    url: str = "http://myworkspace.jpmchase.com"
+    download_dir: Path = Path.home() / "Downloads"
+    ica_path: Path = Path("/opt/Citrix/ICAClient/wfica.sh")
 
     def validate(self) -> None:
         """Validate configuration settings."""
@@ -39,15 +40,15 @@ class WorkspaceAutomation:
     """Handles JPMorgan Workspace automation."""
 
     XPATHS = {
-        'login': '//*[@id="login"]',
-        'password1': '(//input[@type="password"])[1]',
-        'password2': '(//input[@type="password"])[2]',
-        'submit': '//*[@id="loginBtn"]',
-        'install': '//*[@id="protocolhandler-welcome-installButton"]',
-        'detect': '//*[@id="protocolhandler-detect-alreadyInstalledLink"]',
-        'disclaimer': '//*[@id="jpmcAcceptDisclaimerBtn"]',
-        'workspace': '//*[@class="storeapp-name" and contains(text(),"CDC2")]',
-        'open': '//*[@class="theme-highlight-color appDetails-actions-text" and contains(text(),"Open")]'
+        "login": '//*[@id="login"]',
+        "password1": '(//input[@type="password"])[1]',
+        "password2": '(//input[@type="password"])[2]',
+        "submit": '//*[@id="loginBtn"]',
+        "install": '//*[@id="protocolhandler-welcome-installButton"]',
+        "detect": '//*[@id="protocolhandler-detect-alreadyInstalledLink"]',
+        "disclaimer": '//*[@id="jpmcAcceptDisclaimerBtn"]',
+        "workspace": '//*[@class="storeapp-name" and contains(text(),"CDC2")]',
+        "open": '//*[@class="theme-highlight-color appDetails-actions-text" and contains(text(),"Open")]',
     }
 
     def __init__(self, config: WorkspaceConfig, passcode: str):
@@ -59,7 +60,7 @@ class WorkspaceAutomation:
 
     def _print(self, message: str) -> None:
         """Print status message with timestamp."""
-        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {message}")
 
     def _wait_for_element(self, xpath: str, timeout: int = 20) -> WebElement:
@@ -70,7 +71,7 @@ class WorkspaceAutomation:
 
     def _clean_ica_files(self) -> None:
         """Remove existing ICA files from download directory."""
-        for ica_file in self.config.download_dir.glob('*.ica'):
+        for ica_file in self.config.download_dir.glob("*.ica"):
             ica_file.unlink()
             self._print(f"Removed ICA file: {ica_file}")
 
@@ -78,7 +79,7 @@ class WorkspaceAutomation:
         """Wait for and return new ICA file."""
         self._print("Waiting for ICA file download...")
         while True:
-            ica_files = list(self.config.download_dir.glob('*.ica'))
+            ica_files = list(self.config.download_dir.glob("*.ica"))
             if ica_files:
                 self._print(f"Found ICA file: {ica_files[0]}")
                 return ica_files[0]
@@ -95,24 +96,24 @@ class WorkspaceAutomation:
     def _login(self) -> None:
         """Execute login sequence."""
         self._print("Starting login sequence...")
-        self._wait_for_element(self.XPATHS['login']).send_keys(self.config.username)
-        self._wait_for_element(self.XPATHS['password1']).send_keys(self.config.password)
-        self._wait_for_element(self.XPATHS['password2']).send_keys(self.passcode)
-        self._wait_for_element(self.XPATHS['submit']).click()
+        self._wait_for_element(self.XPATHS["login"]).send_keys(self.config.username)
+        self._wait_for_element(self.XPATHS["password1"]).send_keys(self.config.password)
+        self._wait_for_element(self.XPATHS["password2"]).send_keys(self.passcode)
+        self._wait_for_element(self.XPATHS["submit"]).click()
         self._print("Login completed")
 
     def _setup_handlers(self) -> None:
         """Configure protocol handlers."""
         self._print("Configuring protocol handlers...")
-        for action in ['install', 'detect', 'disclaimer']:
+        for action in ["install", "detect", "disclaimer"]:
             self._wait_for_element(self.XPATHS[action]).click()
         self._print("Handlers configured")
 
     def _launch_workspace(self) -> None:
         """Launch workspace application."""
         self._print("Launching workspace application...")
-        self._wait_for_element(self.XPATHS['workspace']).click()
-        self._wait_for_element(self.XPATHS['open']).click()
+        self._wait_for_element(self.XPATHS["workspace"]).click()
+        self._wait_for_element(self.XPATHS["open"]).click()
         self._print("Workspace launched")
 
     def _start_ica_client(self, ica_file: Path) -> None:
@@ -121,7 +122,7 @@ class WorkspaceAutomation:
         subprocess.Popen(
             [str(self.config.ica_path), str(ica_file)],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
 
     def run(self) -> None:

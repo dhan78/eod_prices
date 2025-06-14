@@ -71,15 +71,8 @@ if __name__ == "__main__":
     wait_and_click('//*[@id="jpmcAcceptDisclaimerBtn"]', click=True)
 
     # Workspace selection
-    wait_and_click(
-        '//*[@class="storeapp-name" and contains(text(),"WorkSpace Enterprise_CDC1")]',
-        click=True
-    )
-    wait_and_click(
-        '//*[@class="theme-highlight-color appDetails-actions-text" and contains(text(),"Open")]',
-        click=True
-    )
-
+    wait_and_click('//*[@class="storeapp-name"  and contains(text(),"CDC2")]',click=True)
+    wait_and_click('//*[@class="theme-highlight-color appDetails-actions-text" and contains(text(),"Open") ]',click=True)
     # Handle ICA file
     ica_file = download_wait(DOWNLOAD_FOLDER, '*.ica')
     cmd_line = f'{ICA_CLIENT_PATH} {ica_file}'

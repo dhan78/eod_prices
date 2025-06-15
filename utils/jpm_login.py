@@ -4,9 +4,9 @@ Handles automated login and ICA client launch for JPM Workspace.
 """
 
 import os
+import subprocess
 import sys
 import time
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -22,44 +22,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 @dataclass
 class WorkspaceConfig:
     """Configuration settings for JPM workspace."""
-    username: str = ""
-    password: str = ""
+    username: str = os.getenv("JPM_USER", "")
+    password: str = os.getenv("JPM_PASSWORD", "")
     url: str = "http://myworkspace.jpmchase.com"
     download_dir: Path = Path.home() / "Downloads"
     ica_path: Path = Path("/opt/Citrix/ICAClient/wfica.sh")
 
-    def __post_init__(self):
-        """Initialize after dataclass creation, source env vars if needed."""
-        self.username = os.getenv("JPM_USER", "")
-        self.password = os.getenv("JPM_PASSWORD", "")
-        
-        if not self.username or not self.password:
-            self._source_bashrc()
-
-    def _source_bashrc(self) -> None:
-        """Source credentials from .bashrc file."""
-        bashrc_path = Path.home() / ".bashrc"
-        if not bashrc_path.exists():
-            return
-
-        try:
-            with open(bashrc_path, 'r') as f:
-                bashrc_content = f.read()
-            
-            # Parse JPM credentials from bashrc
-            for line in bashrc_content.splitlines():
-                if line.startswith("export JPM_USER="):
-                    self.username = line.split("=")[1].strip('"\'')
-                elif line.startswith("export JPM_PASSWORD="):
-                    self.password = line.split("=")[1].strip('"\'')
-
-        except Exception as e:
-            print(f"Error reading .bashrc: {e}")
-
     def validate(self) -> None:
         """Validate configuration settings."""
         if not self.username or not self.password:
-            raise ValueError("JPM_USER and JPM_PASSWORD not found in environment or .bashrc")
+            raise ValueError("JPM_USER and JPM_PASSWORD environment variables required")
         if not self.ica_path.exists():
             raise FileNotFoundError(f"ICA client not found at {self.ica_path}")
 
@@ -130,7 +102,7 @@ class WorkspaceAutomation:
         self._wait_for_element(self.XPATHS["submit"]).click()
         self._print("Login completed")
 
-    def _setup_and_launch(self) -> None:
+    def _setup_and_launch_workspace(self) -> None:
         """Configure protocol handlers and launch workspace application."""
         self._print("Setting up handlers and launching workspace...")
         
@@ -160,7 +132,7 @@ class WorkspaceAutomation:
             self._clean_ica_files()
             self._setup_driver()
             self._login()
-            self._setup_and_launch()  # Using the combined method
+            self._setup_and_launch_workspace()
             ica_file = self._wait_for_download()
             self._start_ica_client(ica_file)
             self._print("Workspace automation completed successfully")

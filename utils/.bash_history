@@ -534,3 +534,40 @@ toolbox enter
 toolbox run nautilus 1>nohup.out 2>&1 &
 toolbox enter 
 kk
+ll
+aws sso login --profile S3_RW_access-766644654959 
+ll
+cd .aws
+ll
+cat config 
+vi config 
+aws sso login --profile S3_RW_access-766644654959 
+vi config 
+aws sso login --profile S3_RW_access-766644654959 
+vi config 
+aws sso login --profile S3_RW_access-766644654959 
+vi config 
+aws sso login --profile S3_RW_access-766644654959 
+ll
+cat config
+vi config
+aws sso login --profile S3_RW_access-766644654959 
+ll
+ll ~/.bash_history
+cd
+rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
+echo $HISTFILE
+vi ~/.bash_history
+ll ~/.bash_history
+vi ~/.bash_history
+cd IdeaProjects/eod_prices/utils/
+ll
+ln s ~/.bash_history .
+ln -s ~/.bash_history .
+ls -lA
+vi .bash_history 
+sudo dnf history
+sudo dnf -y update
+exit
+ll
+exit

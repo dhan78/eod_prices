@@ -68,3 +68,16 @@ https://github.com/dgkanatsios/CKAD-exercises/blob/main/README.md
 Python ASYNC/AWAIT
 https://www.youtube.com/watch?v=1z8LLSZSWHM
 
+
+[profile S3_RW_access-766644654959]
+sso_session = new_config
+sso_account_id = 766644654959
+sso_role_name = S3_RW_access
+region = us-east-2
+[default]
+region = us-east-2
+[sso-session new_config]
+sso_start_url = https://d-9a6764dafd.awsapps.com/start
+sso_region = us-east-2
+sso_registration_scopes = sso:account:access
+

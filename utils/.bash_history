@@ -571,3 +571,37 @@ sudo dnf -y update
 exit
 ll
 exit
+rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
+vi /var/home/admin/.config/rclone/rclone.conf
+cat /var/home/admin/.config/rclone/rclone.conf
+ll
+exit
+toolbox enter 
+ll
+toolbox enter 
+ll
+toolbox enter 
+rpm-ostree update
+rpm-ostree status 
+flatpak update
+kk
+toolbox enter 
+toolbox run nautilus 1>nohup.out 2>&1 &
+kk
+ll
+cd s3
+ll
+exit
+toolbox enter 
+toolbox run nautilus 1>nohup.out 2>&1 &
+ll
+toolbox enter 
+kk
+cd s3
+ll
+ll ../google
+ll
+exit
+toolbox enter 
+toolbox run nautilus 1>nohup.out 2>&1 &
+kk

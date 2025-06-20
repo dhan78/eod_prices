@@ -89,5 +89,5 @@ MSG_FILE=$1
 
 # Only add branch name if not a merge or squash commit
 if [ "$2" != "merge" ] && [ "$2" != "squash" ]; then
-  sed -i "1s/^/$BRANCH_NAME :  /" "$MSG_FILE"
+  sed -i "1s/^/$BRANCH_NAME /" "$MSG_FILE"
 fi

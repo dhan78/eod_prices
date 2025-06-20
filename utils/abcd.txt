@@ -81,3 +81,13 @@ sso_start_url = https://d-9a6764dafd.awsapps.com/start
 sso_region = us-east-2
 sso_registration_scopes = sso:account:access
 
+add branch name to commit message: 
+#!/bin/sh
+#
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+MSG_FILE=$1
+
+# Only add branch name if not a merge or squash commit
+if [ "$2" != "merge" ] && [ "$2" != "squash" ]; then
+  sed -i "1s/^/$BRANCH_NAME :  /" "$MSG_FILE"
+fi

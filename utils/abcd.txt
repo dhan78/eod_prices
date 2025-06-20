@@ -80,3 +80,4 @@ region = us-east-2
 sso_start_url = https://d-9a6764dafd.awsapps.com/start
 sso_region = us-east-2
 sso_registration_scopes = sso:account:access
+

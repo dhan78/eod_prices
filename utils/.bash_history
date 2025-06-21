@@ -687,3 +687,23 @@ toolbox run nautilus 1>nohup.out 2>&1 &
 exit
 toolbox run nautilus 1>nohup.out 2>&1 &
 kk
+toolbox run code IdeaProjects/eod_prices/
+kk
+python jpm_login.py 43254480
+killall wfica
+sudo dnf -y update
+exit
+git log
+ll
+sort utils/.bash_history 
+sort utils/.bash_history  | uniq
+sort utils/.bash_history  | uniq > .bash_history
+sort utils/.bash_history  | uniq
+/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/deactivate/bash/envVars.txt
+ll
+toolbox enter 
+rpm-ostree update
+toolbox run nautilus 1>nohup.out 2>&1 &
+rpm-ostree status 
+flatpak update
+kk

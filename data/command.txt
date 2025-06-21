@@ -1,1 +1,0 @@
-split -b 10m data_store.sqlite --additional-suffix _data_store.sqlite

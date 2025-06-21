@@ -605,3 +605,85 @@ exit
 toolbox enter 
 toolbox run nautilus 1>nohup.out 2>&1 &
 kk
+toolbox run nautilus 1>nohup.out 2>&1 &
+toolbox enter 
+kk
+toolbox enter 
+flatpak update
+kk
+python jpm_login.py 24998839
+sudo dnf -y update
+exit
+toolbox enter 
+rpm-ostree update
+kk
+toolbox run nautilus 1>nohup.out 2>&1 &
+kk
+toolbox enter 
+ll
+cd utils
+ll
+ln -s /var/home/admin/.config/rclone/rclone.conf .
+cd .git
+cd ..
+cd .git
+cd hooks
+ll
+git log
+ll
+chmod +x prepare-commit-msg 
+clear
+ll
+git pull
+ll
+git
+git pull
+cd ../..
+git pull
+git log
+ll
+/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/deactivate/bash/envVars.txt
+ll
+nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
+ll
+pkill -f eod_prices
+rpm-ostree update
+ll
+kk
+rpm-ostree update
+ll
+kk
+rpm-ostree status 
+kk
+uptime
+kk
+rpm-ostree update
+flatpak update
+uptime
+rpm-ostree status 
+reboot
+flatpak update
+toolbox run nautilus 1>nohup.out 2>&1 &
+toolbox enter 
+kk
+ll
+aws sso login --profile S3_RW_access-766644654959 
+ll
+ll s3
+ll
+rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
+ll s3
+rclone mount gdrive: google --daemon
+exit
+toolbox enter 
+kk
+toolbox run nautilus 1>nohup.out 2>&1 &
+kk
+flatpak update
+rpm-ostree update
+toolbox run nautilus 1>nohup.out 2>&1 &
+kk
+toolbox run nautilus 1>nohup.out 2>&1 &
+exit
+toolbox run nautilus 1>nohup.out 2>&1 &
+kk

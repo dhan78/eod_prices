@@ -37,7 +37,7 @@ class WorkspaceConfig:
 
 
 class WorkspaceAutomation:
-    """Handles JPMorgan Workspace automation."""
+    """Automates JPMorgan Workspace login and ICA client launch."""
 
     XPATHS = {
         "login": '//*[@id="login"]',
@@ -58,10 +58,9 @@ class WorkspaceAutomation:
         self.driver: Optional[webdriver.Firefox] = None
         self.config.validate()
 
-    def _print(self, message: str) -> None:
+    def _log(self, message: str) -> None:
         """Print status message with timestamp."""
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{timestamp}] {message}")
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}")
 
     def _wait_for_element(self, xpath: str, timeout: int = 20) -> WebElement:
         """Wait for element and return when clickable."""
@@ -72,53 +71,45 @@ class WorkspaceAutomation:
     def _clean_ica_files(self) -> None:
         """Remove existing ICA files from download directory."""
         for ica_file in self.config.download_dir.glob("*.ica"):
-            ica_file.unlink()
-            self._print(f"Removed ICA file: {ica_file}")
+            ica_file.unlink(missing_ok=True)
+            self._log(f"Removed ICA file: {ica_file}")
 
-    def _wait_for_download(self) -> Path:
-        """Wait for and return new ICA file."""
-        self._print("Waiting for ICA file download...")
-        while True:
-            ica_files = list(self.config.download_dir.glob("*.ica"))
-            if ica_files:
-                self._print(f"Found ICA file: {ica_files[0]}")
-                return ica_files[0]
+    def _wait_for_download(self, timeout: int = 60) -> Path:
+        """Wait for and return new ICA file, with timeout."""
+        self._log("Waiting for ICA file download...")
+        start = time.time()
+        while time.time() - start < timeout:
+            ica_file = next((f for f in self.config.download_dir.glob("*.ica")), None)
+            if ica_file:
+                self._log(f"Found ICA file: {ica_file}")
+                return ica_file
             time.sleep(1)
-
-    def _setup_driver(self) -> None:
-        """Initialize Firefox webdriver."""
-        self._print("Initializing Firefox webdriver...")
-        options = Options()
-        self.driver = webdriver.Firefox(options=options)
-        self.driver.get(self.config.url)
-        self._print("Browser opened and navigated to workspace URL")
+        raise TimeoutError("Timed out waiting for ICA file download.")
 
     def _login(self) -> None:
         """Execute login sequence."""
-        self._print("Starting login sequence...")
+        self._log("Starting login sequence...")
         self._wait_for_element(self.XPATHS["login"]).send_keys(self.config.username)
         self._wait_for_element(self.XPATHS["password1"]).send_keys(self.config.password)
         self._wait_for_element(self.XPATHS["password2"]).send_keys(self.passcode)
         self._wait_for_element(self.XPATHS["submit"]).click()
-        self._print("Login completed")
+        self._log("Login completed")
 
     def _setup_and_launch_workspace(self) -> None:
         """Configure protocol handlers and launch workspace application."""
-        self._print("Setting up handlers and launching workspace...")
-        
-        # Configure protocol handlers
-        handlers = ["install", "detect", "disclaimer"]
-        for action in handlers:
-            self._wait_for_element(self.XPATHS[action]).click()
-        
-        # Launch workspace
+        self._log("Setting up handlers and launching workspace...")
+        for action in ("install", "detect", "disclaimer"):
+            try:
+                self._wait_for_element(self.XPATHS[action], timeout=5).click()
+            except Exception:
+                pass  # Element may not always be present
         self._wait_for_element(self.XPATHS["workspace"]).click()
         self._wait_for_element(self.XPATHS["open"]).click()
-        self._print("Workspace setup and launch completed")
+        self._log("Workspace setup and launch completed")
 
     def _start_ica_client(self, ica_file: Path) -> None:
         """Launch ICA client with downloaded file."""
-        self._print(f"Starting ICA client with file: {ica_file}")
+        self._log(f"Starting ICA client with file: {ica_file}")
         subprocess.Popen(
             [str(self.config.ica_path), str(ica_file)],
             stdout=subprocess.DEVNULL,
@@ -127,22 +118,27 @@ class WorkspaceAutomation:
 
     def run(self) -> None:
         """Execute complete automation sequence."""
-        self._print("Starting workspace automation...")
+        self._log("Starting workspace automation...")
         try:
             self._clean_ica_files()
-            self._setup_driver()
+            self._setup_driver_and_run()
+            self._log("Workspace automation completed successfully")
+        except Exception as e:
+            self._log(f"Error during automation: {e}")
+            raise
+
+    def _setup_driver_and_run(self) -> None:
+        """Setup webdriver, perform login, launch workspace, and cleanup."""
+        options = Options()
+        with webdriver.Firefox(options=options) as driver:
+            self.driver = driver
+            driver.get(self.config.url)
+            self._log("Browser opened and navigated to workspace URL")
             self._login()
             self._setup_and_launch_workspace()
             ica_file = self._wait_for_download()
             self._start_ica_client(ica_file)
-            self._print("Workspace automation completed successfully")
-        except Exception as e:
-            self._print(f"Error during automation: {e}")
-            raise
-        finally:
-            if self.driver:
-                self.driver.quit()
-                self._print("Browser closed")
+            self._log("Browser closed")
 
 
 def main() -> None:
@@ -150,7 +146,6 @@ def main() -> None:
     if len(sys.argv) != 2:
         print("Usage: python jpm_login.py <passcode>")
         sys.exit(1)
-
     try:
         config = WorkspaceConfig()
         automation = WorkspaceAutomation(config, sys.argv[1])

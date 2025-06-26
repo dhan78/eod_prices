@@ -115,18 +115,6 @@ class WorkspaceAutomation:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-
-    def run(self) -> None:
-        """Execute complete automation sequence."""
-        self._log("Starting workspace automation...")
-        try:
-            self._clean_ica_files()
-            self._setup_driver_and_run()
-            self._log("Workspace automation completed successfully")
-        except Exception as e:
-            self._log(f"Error during automation: {e}")
-            raise
-
     def _setup_driver_and_run(self) -> None:
         """Setup webdriver, perform login, launch workspace, and cleanup."""
         options = Options()
@@ -139,6 +127,18 @@ class WorkspaceAutomation:
             ica_file = self._wait_for_download()
             self._start_ica_client(ica_file)
             self._log("Browser closed")
+
+    def run(self) -> None:
+        """Execute complete automation sequence."""
+        self._log("Starting workspace automation...")
+        try:
+            self._clean_ica_files()
+            self._setup_driver_and_run()
+            self._log("Workspace automation completed successfully")
+        except Exception as e:
+            self._log(f"Error during automation: {e}")
+            raise
+
 
 
 def main() -> None:

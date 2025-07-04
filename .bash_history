@@ -57,7 +57,8 @@ mv requirements.txT requirements.txt
 nautilus
 nautilus &
 nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
-oolbox enter 
+
+oolbox enter 
 p install --upgrade pip
 pip freeze > requirements.txT
 pip install -r requirements.txt 
@@ -85,20 +86,6 @@ python
 python ./app.py 
 python app.py
 python jpm_login.py 02598152
-python jpm_login.py 03188488
-python jpm_login.py 16913651
-python jpm_login.py 19487993
-python jpm_login.py 21163539
-python jpm_login.py 24998839
-python jpm_login.py 49015699
-python jpm_login.py 53474260
-python jpm_login.py 60377129
-python jpm_login.py 63685692
-python jpm_login.py 70632054
-python jpm_login.py 78041101
-python jpm_login.py 89087122
-python jpm_login.py 92519944
-python jpm_login.py 93519944
 rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
 rclone mount gdrive: google --daemon
 reboot
@@ -129,14 +116,6 @@ toolbox run ll IdeaProjects
 toolbox run ls IdeaProjects
 toolbox run ls IdeaProjects/eod_prices 
 toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox run python jpm_login.py 
-toolbox run python jpm_login.py 31574937
-toolbox run python jpm_login.py 46935434
-toolbox run python jpm_login.py 78887458
-toolbox run python jpm_login.py 79834429
-toolbox run python jpm_login.py 80537900
-toolbox run python jpm_login.py 89087122
-toolbox run python jpm_login.py 99648540
 toolbox run /var/home/admin/IdeaProjects/eod_prices/.venv/bin/python app.py
 top
 top 

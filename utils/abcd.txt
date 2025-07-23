@@ -81,3 +81,10 @@ sso_start_url = https://d-9a6764dafd.awsapps.com/start
 sso_region = us-east-2
 sso_registration_scopes = sso:account:access
 
+
+
+bruno BearerToken: https://www.youtube.com/watch?v=zEWmi6UHj_g
+
+grpc video and description: 
+https://www.youtube.com/watch?v=IdP26QGUTds
+https://github.com/BehnamAxo/grpc-vs-rest/blob/main/grpc/proto/user.proto

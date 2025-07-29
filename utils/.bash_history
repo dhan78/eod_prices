@@ -707,3 +707,81 @@ toolbox run nautilus 1>nohup.out 2>&1 &
 rpm-ostree status 
 flatpak update
 kk
+exit
+python jpm_login.py 57108733
+python jpm_login.py 84876855
+ll
+top
+ll
+sudo dnf -y update
+exit
+rpm-ostree update
+exit
+/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/deactivate/bash/envVars.txt
+ll
+cd data
+ll
+ll x*
+ll *.sqlite
+ls -lrt
+rm *
+ll
+cd ..
+ll
+rm Sanctions.zip 
+python jpm_login.py 05868303
+sudo dnf -y update
+exit
+toolbox run code IdeaProjects/eod_prices/
+top
+ll
+vi nohup.out 
+ll
+rm nohup.out 
+ll
+toolbox enter 
+flatpak update
+rpm-ostree update
+rpm-ostree status 
+toolbox enter 
+rpm-ostree update
+rpm-ostree status 
+reboot
+python jpm_login.py 03995574
+top
+ll
+fwupdmgr update
+exit
+toolbox enter 
+fwupdmgr update
+kk
+aws sso login --profile S3_RW_access-766644654959 
+ll
+rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
+ll s3
+top
+rpm-ostree update
+exit
+toolbox enter 
+toolbox enter 
+rpm-ostree update
+flatpak update
+ll
+top
+ll
+kk
+aws sso login --profile S3_RW_access-766644654959 
+ll
+ll s3
+ll google
+rclone mount gdrive: google --daemon
+exit
+ll
+sudo dnf -y update
+exit
+toolbox enter 
+toolbox run code IdeaProjects/eod_prices/
+toolbox enter 
+flatpak update
+ll
+kk

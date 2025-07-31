@@ -1,5 +1,5 @@
 [project]
-name = "eod-prices"
+name = "eod_prices"  # Changed from eod-prices to eod_prices
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -163,3 +163,19 @@ dependencies = [
     "yfinance==0.2.62",
     "zipp==3.21.0",
 ]
+
+[project.scripts]
+eod_prices = "eod_prices.__main__:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.setuptools]
+dynamic = ["version"]
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+include = ["eod_prices*"]  # package names should match these glob patterns
+exclude = ["tests*"]  # exclude packages matching these glob patterns
+namespaces = false  # to disable scanning PEP 420 namespaces

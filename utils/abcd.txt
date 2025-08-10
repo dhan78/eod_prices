@@ -90,3 +90,5 @@ https://www.youtube.com/watch?v=IdP26QGUTds
 https://github.com/BehnamAxo/grpc-vs-rest/blob/main/grpc/proto/user.proto
 
 guacamole setup: https://www.youtube.com/watch?v=BqoZznqWXwo&t=3s
+
+wireguard EC2 configuration: https://www.youtube.com/watch?v=GL5rphZ7wUQ

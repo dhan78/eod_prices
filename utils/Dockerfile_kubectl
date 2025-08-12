@@ -1,0 +1,24 @@
+FROM alpine:3.20
+
+# Install dependencies
+RUN apk add --no-cache bash curl unzip groff less jq python3 py3-pip
+
+# Install AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf aws awscliv2.zip
+
+# Install kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && install -m 0755 kubectl /usr/local/bin/kubectl \
+    && rm kubectl
+
+# Install k9s (latest release)
+RUN K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | jq -r .tag_name) \
+    && curl -L "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" -o k9s.tar.gz \
+    && tar -xzf k9s.tar.gz \
+    && install -m 0755 k9s /usr/local/bin/k9s \
+    && rm k9s.tar.gz k9s
+
+ENTRYPOINT ["/bin/bash"]

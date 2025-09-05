@@ -26,3 +26,4 @@ nohup.out
 /.idea/.gitignore
 data_store.sqlite
 /venv/
+utils/data/

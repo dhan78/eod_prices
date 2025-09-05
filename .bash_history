@@ -1,4 +1,3 @@
- 
 aws sso login --profile S3_RW_access-766644654959 
 /bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.4.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash/envVars.txt
 /bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt

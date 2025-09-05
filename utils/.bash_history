@@ -1,787 +1,500 @@
-rpm-ostree update
-rpm-ostree status 
-toolbox enter 
-rpm-ostree update
-exit
-rpm-ostree update
-flatpak update
-rpm-ostree update
-top
-kk
-rpm-ostree update
-reboot
-aws sso login --profile S3_RW_access-766644654959 
-sudo dnf -y update
-exit
-rpm-ostree update
-rpm-ostree status 
-uptime
-toolbox enter 
-flatpak update
-kk
-flatpak update
-rpm-ostree update
-rpm-ostree status 
-ll
-top
-ll
-top
-ll
-cd IdeaProjects/
-ll
-cd ..
-ll
-kk
-ll
-top
-kk
-toolbox enter 
-rpm-ostree update
-rpm-ostree status 
-flatpak update
-toolbox enter 
-top
-rpm-ostree update
-rpm-ostree status 
-flatpak update
-toolbox enter 
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.4.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.4.0-linux-x64/python_files/deactivate/bash/envVars.txt
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-python
-python app.py
-ll
-pwd
-pwd
-cd
-cd IdeaProjects/
-ll
-cd eod_prices/
-ll
-python app.py
-sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
-dnf check-update
-sudo dnf install code
-code .
-exit
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-ll
-git log
-git pull
-ll
-toolbox run code 1>nohup.out 2>&1 &
-ll
-rpm-ostree status 
-ll
-toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox enter 
-kk
-toolbox enter 
-toolbox run nautilus 1>nohup.out 2>&1 &
-kk
-toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox enter 
-kk
-toolbox enter 
-toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox enter 
-kk
-ll
-ll s3
-ll
-cd s3
-ll
-cd ../google
-ll
-nautilus
-nautilus &
-exit
-toolbox enter 
-toolbox run code 1>nohup.out 2>&1 &
-kk
-git pull
-python
-pip install --upgrade pip
-pip list --outdated --format=freeze | cut -d = -f 1 | xargs -n1 pip install -U
-pip install -r requirements.txt 
-p install --upgrade pip
-pip install --upgrade -r requirements.txt
-pip freeze > requirements.txT
-ll
-mv requirements.txT requirements.txt
-ll
-python app.py
-git log
-git push
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-exit
-exit
-cd IdeaProjects/
-ll
-cd eod_prices/
-ll
-python app.py
-ll
-python ./app.py 
-ll
-py
-exit
- /usr/bin/env /var/home/admin/IdeaProjects/eod_prices/.venv/bin/python /var/home/admin/.vscode/extensions/ms-python.debugpy-2025.8.0-linux-x64/bundled/libs/debugpy/adapter/../../debugpy/launcher 51017 -- /var/home/admin/IdeaProjects/eod_prices/app.py \$\{command:pickArgs\} 
-which python
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-ll
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-git push
-toolbox enter 
-ll
-toolbox enter 
-vi .bash_history
-ll
-toolbox run ~/IdeaProjects/eod_prices/.venv/bin/python app.py
-toolbox run /var/home/admin/IdeaProjects/eod_prices/.venv/bin/python app.py
-toolbox run cd eod_prices; /var/home/admin/IdeaProjects/eod_prices/.venv/bin/python app.py
-toolbox run cd eod_prices; ls
-toolbox run cd IdeaProjects; ls
-toolbox run ll IdeaProjects
-toolbox run ls IdeaProjects
-toolbox run cd IdeaProjects/eod_prices
-toolbox run cd IdeaProjects/eod_prices && ls
-toolbox run ls IdeaProjects/eod_prices 
-toolbox run IdeaProjects/eod_prices/.venv/bin/python
-toolbox run IdeaProjects/eod_prices/.venv/bin/python app.py
-toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py
-nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
-ll
-ps -ef | grep app.py
-pkill -f eod_prices
-nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
-exit
-pkill -f eod_prices
-exit
-nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
-exit
-pkill -f eod_prices
-exit
-code .
-which python
-~/IdeaProjects/eod_prices/.venv/bin/python
-pwd
-exit
-toolbox enter 
-exit
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-toolbox enter 
-git log
-ll
-kk
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-toolbox run code IdeaProjects/eod_prices/
-exit
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
-ll
-tail -f nohup.out 
-toolbox run code IdeaProjects/eod_prices/
-pkill -f eod_prices
-nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
-pkill -f eod_prices
-top
-kk
-sudo dnf -y update
-exit
-rpm-ostree update
-rpm-ostree status 
-toolbox enter 
-flatpak update
-pip list --outdated --format=freeze | cut -d = -f 1 | xargs -n1 pip install -U
-flatpak list 
- 
-rpm-ostree status 
-uptime
-reboot
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-ll
-sudo dnf -y update
-firefox 
-code .
-python jpm_login.py 63685692
-nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
-exit
-rpm-ostree update
-flatpak list 
-flatpak update
-toolbox enter 
-pkill -f eod_prices
-ps -ef | grep eod
-jobs
-kk
-fwupdmgr update
-ll
-kk
-fwupdmgr update
-rpm-ostree update
-reboot
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-git log
-ll
-flatpak update
-toolbox run code IdeaProjects/eod_prices/
-toolbox enter 
-top
-kk
-rpm-ostree status 
-top
-rpm-ostree status 
-kk
-rpm-ostree status 
-kk
-rpm-ostree update
-rpm-ostree status 
-flatpak update
-rpm-ostree update
-python jpm_login.py 93519944
-python jpm_login.py 92519944
-sudo dnf -y update
-exit
-toolbox enter 
-flatpak update
-toolbox run jpm_login.py 99648540
-toolbox run python jpm_login.py 99648540
-toolbox run code IdeaProjects/eod_prices/
-top 
-kk
-whoami
-ll
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-cd s3
-ll
-cd ..
-aws sso login --profile S3_RW_access-766644654959 
-ll s3
-rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
-ll s3
-exit
-ll
-kk
-flatpak list
-exit
-rpm-ostree update
-flatpak update
-ll
-sudo dnf -y update
-toolbox enter 
-flatpak list
-flatpak uninstall com.visualstudio.code
-flatpak update
-kk
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-exit
-rpm-ostree update
-flatpak update
-exit
-python jpm_login.py 89087122
-vi .bashrc
-pwd
-exit
-python jpm_login.py 70632054
-ll
-exit
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-toolbox run code IdeaProjects/eod_prices/
-vi jpm_login.py 
-toolbox enter 
-toolbox run python jpm_login.py 
-toolbox run python jpm_login.py 89087122
-toolbox enter 
-toolbox run python jpm_login.py 80537900
-toolbox enter 
-kk
-toolbox run python jpm_login.py 31574937
-toolbox run python jpm_login.py 79834429
-toolbox enter 
-ll s3
-aws sso login --profile S3_RW_access-766644654959 
-ll s3
-cd ../google
-ll google
-rclone mount gdrive: google --daemon
-ll google
-ll s3
-exit
-toolbox run code IdeaProjects/eod_prices/
-toolbox enter 
-toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox run python jpm_login.py 46935434
-kk
-ps -ef | grep wfica
-sudo dnf -y update
-exit
-toolbox run python jpm_login.py 78887458
-ps -ef | grep wfica
-toolbox enter 
-rpm-ostree update
-flatpak update
-python jpm_login.py 19487993
-rpm-ostree status 
-exit
-ll
-aws sso login --profile S3_RW_access-766644654959 
-rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
-ll
-ll s3
-ll
-exit
-ll
-exit
-python jpm_login.py 53474260
-toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox enter 
-toolbox run nautilus 1>nohup.out 2>&1 &
-ll
-toolbox enter 
-ll
-rm dr\ Sarala\ Thyroid\ unnecessary.txt 
-ll
-ll IdeaProjects/eod_prices/utils/abcd.txt 
-ln -s IdeaProjects/eod_prices/utils/abcd.txt  .
-ll
-top
-ll
-sudo dnf -y update
-exit
-oolbox enter 
-toolbox enter 
-rpm-ostree status 
-toolbox enter 
-rpm-ostree update
-flatpak update
-toolbox enter 
-rpm-ostree update
-sudo dnf -y update
-exit
-rpm-ostree update
-flatpak update
-top
-kk
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-rpm-ostree status 
-uptime
-reboot
-exit
-exit
-exit
-exit
-toolbox enter 
-exit
-exit
-exit
-git pull
-git fetch
-ll
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-python jpm_login.py 60377129
-sudo dnf -y update
-exit
-rpm-ostree update
-exit
-rpm-ostree update
-rpm-ostree status 
-reboot
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-ll
-top
-aws sso login --profile S3_RW_access-766644654959 
-rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
-rclone mount gdrive: google --daemon
-exit
-exit
-toolbox run code IdeaProjects/eod_prices/
-exit
-flatpak update
-sudo dnf -y update
-exit
-exit
-ll
-sudo dnf -y update
-exit
-rpm-ostree update
-flatpak update
-toolbox enter 
-exit
-ptyxis
-gnome-terminal
-exit
-ptyxis 
-exit
-exit
-toolbox list
-ptyxis --tab-with-profile="8eb8ba5a28c0"
-exit
-exit
-ptyxis --tab-with-profile="8eb8ba5a28c0"
-toolbox list
-ptyxis fedora-toolbox-42
-exit
-t
-exit
-ptyxis --tab-with-profile=fedora-toolbox-42
-exit
-exit
-ptyxis --tab-with-profile=fedora-toolbox-42
-ptyxis --tab-with-profile=fedora-toolbox-42
-exit
-ptyxis --tab-with-profile=fedora-toolbox-42
-ptyxis --tab-with-profile=fedora-toolbox-42 --new-window
-toolbox list
-ptyxis --tab-with-profile="fedora-toolbox-42" --new-window
-ptyxis --tab-with-profile="fedora-toolbox-42" 
-ptyxis --tab-with-profile="8eb8ba5a28c0" 
-exit
-exit
-exit
-exit
-ptyxis --tab-with-profile="0c4d6321e1181b213c65269f67315816"
-ptyxis --tab-with-profile=0c4d6321e1181b213c65269f67315816
-exit
-exit
-exit
-exit
-exit
-exit
-top
-exit
-sudo dnf -y update
-exit
-exit
-toolbox enter 
-rpm-ostree status 
-top
-kk
-sudo dnf -y update
-exit
-toolbox enter 
-kk
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.6.1-linux-x64/python_files/deactivate/bash/envVars.txt
-toolbox run code IdeaProjects/eod_prices/
-rpm-ostree update
-reboot
-rpm-ostree update
-flatpak update
-toolbox enter 
-flatpak update
-rpm-ostree update
-kk
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/deactivate/bash/envVars.txt
-ll
-toolbox run code IdeaProjects/eod_prices/
-rpm-ostree update
-python jpm_login.py 49015699
-sudo dnf -y update
-exit
-toolbox enter 
-rpm-ostree update
-flatpak update
-kk
-rpm-ostree update
-kk
-python jpm_login.py 16913651
-sudo dnf -y update
-flatpak update
-python jpm_login.py 21163539
-sudo dnf -y update
-exit
-ll
-toolbox enter 
-rpm-ostree update
-toolbox run code IdeaProjects/eod_prices/
-kk
-rpm-ostree update
-sudo dnf -y update
-exit
-sudo dnf -y update
-sudo dnf history
-dnf history
-exit
-rpm-ostree update
-rpm-ostree status 
-flatpak update
-rpm-ostree status 
-rpm-ostree update
-toolbox enter 
-kk
-top
-kk
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/deactivate/bash/envVars.txt
-python jpm_login.py 03188488
-python jpm_login.py 78041101
-firefox
-python jpm_login.py 02598152
-dnf history
-sudo dnf history
-ll
-exit
-ll
-ll s3
-ll
-rclone mount gdrive: google --daemon
-rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
-aws sso login --profile S3_RW_access-766644654959 
-ll
-exit
-toolbox enter 
-toolbox run code IdeaProjects/eod_prices/
-toolbox enter 
-toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox enter 
-kk
-ll
-aws sso login --profile S3_RW_access-766644654959 
-ll
-cd .aws
-ll
-cat config 
-vi config 
-aws sso login --profile S3_RW_access-766644654959 
-vi config 
-aws sso login --profile S3_RW_access-766644654959 
-vi config 
-aws sso login --profile S3_RW_access-766644654959 
-vi config 
-aws sso login --profile S3_RW_access-766644654959 
-ll
-cat config
-vi config
-aws sso login --profile S3_RW_access-766644654959 
-ll
-ll ~/.bash_history
-cd
-rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
-echo $HISTFILE
-vi ~/.bash_history
-ll ~/.bash_history
-vi ~/.bash_history
-cd IdeaProjects/eod_prices/utils/
-ll
-ln s ~/.bash_history .
-ln -s ~/.bash_history .
-ls -lA
-vi .bash_history 
-sudo dnf history
-sudo dnf -y update
-exit
-ll
-exit
-rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
-vi /var/home/admin/.config/rclone/rclone.conf
-cat /var/home/admin/.config/rclone/rclone.conf
-ll
-exit
-toolbox enter 
-ll
-toolbox enter 
-ll
-toolbox enter 
-rpm-ostree update
-rpm-ostree status 
-flatpak update
-kk
-toolbox enter 
-toolbox run nautilus 1>nohup.out 2>&1 &
-kk
-ll
-cd s3
-ll
-exit
-toolbox enter 
-toolbox run nautilus 1>nohup.out 2>&1 &
-ll
-toolbox enter 
-kk
-cd s3
-ll
-ll ../google
-ll
-exit
-toolbox enter 
-toolbox run nautilus 1>nohup.out 2>&1 &
-kk
-toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox enter 
-kk
-toolbox enter 
-flatpak update
-kk
-python jpm_login.py 24998839
-sudo dnf -y update
-exit
-toolbox enter 
-rpm-ostree update
-kk
-toolbox run nautilus 1>nohup.out 2>&1 &
-kk
-toolbox enter 
-ll
-cd utils
-ll
-ln -s /var/home/admin/.config/rclone/rclone.conf .
-cd .git
-cd ..
-cd .git
-cd hooks
-ll
-git log
-ll
-chmod +x prepare-commit-msg 
-clear
-ll
-git pull
-ll
-git
-git pull
-cd ../..
-git pull
-git log
-ll
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/deactivate/bash/envVars.txt
-ll
-nohup toolbox run IdeaProjects/eod_prices/.venv/bin/python IdeaProjects/eod_prices/app.py 1>nohup.out 2>&1 &
-ll
-pkill -f eod_prices
-rpm-ostree update
-ll
-kk
-rpm-ostree update
-ll
-kk
-rpm-ostree status 
-kk
-uptime
-kk
-rpm-ostree update
-flatpak update
-uptime
-rpm-ostree status 
-reboot
-flatpak update
-toolbox run nautilus 1>nohup.out 2>&1 &
-toolbox enter 
-kk
-ll
-aws sso login --profile S3_RW_access-766644654959 
-ll
-ll s3
-ll
-rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
-ll s3
-rclone mount gdrive: google --daemon
-exit
-toolbox enter 
-kk
-toolbox run nautilus 1>nohup.out 2>&1 &
-kk
-flatpak update
-rpm-ostree update
-toolbox run nautilus 1>nohup.out 2>&1 &
-kk
-toolbox run nautilus 1>nohup.out 2>&1 &
-exit
-toolbox run nautilus 1>nohup.out 2>&1 &
-kk
-toolbox run code IdeaProjects/eod_prices/
-kk
-python jpm_login.py 43254480
-killall wfica
-sudo dnf -y update
-exit
-git log
-ll
-sort utils/.bash_history 
-sort utils/.bash_history  | uniq
-sort utils/.bash_history  | uniq > .bash_history
-sort utils/.bash_history  | uniq
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/deactivate/bash/envVars.txt
-ll
-toolbox enter 
-rpm-ostree update
-toolbox run nautilus 1>nohup.out 2>&1 &
-rpm-ostree status 
-flatpak update
-kk
-exit
-python jpm_login.py 57108733
-python jpm_login.py 84876855
-ll
-top
-ll
-sudo dnf -y update
-exit
-rpm-ostree update
-exit
-/bin/python /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/printEnvVariablesToFile.py /var/home/admin/.vscode/extensions/ms-python.python-2025.8.0-linux-x64/python_files/deactivate/bash/envVars.txt
-ll
-cd data
-ll
-ll x*
-ll *.sqlite
+wg-quick up Laptop.conf
 ls -lrt
-rm *
+wg-quick up Laptop.conf
+sudo wg-quick up Laptop.conf
+sudo mv /var/home/admin/Downloads/Laptop.conf /etc/wireguard/Laptop
+sudo wg-quick up Laptop
+sudo ls /etc/wireguard/Laptop.conf
+ll
+sudo ls /etc/wireguard/Laptop
+sudo cat /etc/wireguard/Laptop
+sudo wg-quick up Laptop
+sudo mv /etc/wireguard/Laptop /etc/wireguard/Laptop.conf
+sudo wg-quick up Laptop
+cat Laptop-thinkpad.conf 
+sudo cat /etc/wireguard/Laptop.conf
+sudo vi /etc/wireguard/Laptop.conf
+sudo wg-quick down Laptop
+sudo cat /etc/wireguard/Laptop.conf
+sudo vi /etc/wireguard/Laptop.conf
+sudo cat /etc/wireguard/Laptop.conf
+sudo wg-quick up Laptop
+sudo wg-quick down Laptop
+ip route
+sudo cat /etc/wireguard/Laptop.conf
+sudo vi /etc/wireguard/Laptop.conf
+sudo wg-quick up Laptop
+podman exec -it wg-easy bash
+cd -
+ll
+podman compose -f docker-compose.yaml down -d
+podman compose -f docker-compose.yaml down 
+podman compose -f docker-compose.yaml up -d
+cd -
+podman ps -a
+podman exec -it wg-easy bash
+ll
+sudo wg-quick down Laptop
+sudo wg-quick up Laptop
+sudo iptables -t nat -L -n -v   # NAT table
+sudo iptables -L -n -v          # filter table
+sudo iptables -t mangle -L -n -v
+sudo wg-quick up Laptop
+cd -
 ll
 cd ..
 ll
-rm Sanctions.zip 
-python jpm_login.py 05868303
-sudo dnf -y update
-exit
-toolbox run code IdeaProjects/eod_prices/
+podman compose up -f pihole_compose.yaml 
+podman compose -f pihole_compose.yaml  up
+sudo vi /etc/syscl.conf
+podman compose -f pihole_compose.yaml  up
+cat /etc/sysctl.conf
+vi /etc/sysctl.conf
+sudo vi /etc/sysctl.conf
+sudo sysctl -p
+podman compose -f pihole_compose.yaml  up
+podman ps -a
+podman rm -f pihole
+podman ps -a
+podman compose -f pihole_compose.yaml  up
+podman compose -f pihole_compose.yaml  up -build
+podman compose -f pihole_compose.yaml  up --build
+podman ps -a
+podman logs -f pihole
+podman exec -it pihole bash
+podman ps -a
+podman compose -f pihole_compose.yaml  up --build
+podman compose -f pihole_compose.yaml  down
+podman ps -a
+podman compose -f pihole_compose.yaml  up --build
+sudo ss -tulpn | grep ':53'
+podman compose -f pihole_compose.yaml  up --build
+podman ps -a
+podman rm -f pihole
+podman compose -f pihole_compose.yaml  up --build
+podman compose -f pihole_compose.yaml  up --build -d
+podman logs -f pihole
+podman ps -a
+podman stop pihole
+podman ps -a
+cd -
+ll
+cd ~/Downloads/
+ll
+sudo wg-quick up Laptop
+ip addr
+ip route
+ll
+cat Laptop-thinkpad.conf 
+ping google.com
+podman exec -it wg-easy bash
+ll
 top
 ll
-vi nohup.out 
+toolbox enter 
+podman ps -a
+cd -
 ll
-rm nohup.out 
+cd ..
+ll
+podman compose -f pihole_compose.yaml  up --build -d
+toolbox enter 
+ll
+podman ps -a
+ll
+podman compose -f docker-compose.yaml  up --build -d
+podman ps -a
+podman logs -f caddy_server 
+podman exec -it caddy_server bash
+podman exec -it caddy_server sh
+code .
+exit
+python jpm_login.py 57326923
+exit
+cd
+uv run jpm_login.py 40671539
+ll
+rpm-ostree update
+sudo dnf update -y
+ll
+cat initdb.sql 
+ll
+top
+ll
+code .
+sudo dnf update -y
+uv run jpm_login.py 32309081
+uv run jpm_login.py 01900250
+uv run jpm_login.py 34670250
+s
+sudo dnf update -y
+exit
+code .
+exit
+uvx --from git+https://github.com/dhan78/option_tracker.git option-tracker
+cd
 ll
 toolbox enter 
+ip addr
+sudo firewall-cmd --zone=FedoraWorkstation --list-all
+sudo firewall-cmd --list-ports
+ss -tuln | grep 8050
+ip route
+cd IdeaProjects/caddy/
+ll
+cd wg-easy/
+ll
+cat docker-compose.yaml 
+podman ps -a
+podman stop wg-easy
+ll
+podman compose -f docker-compose.yaml  up -d
+ip route
+curl http://127.0.0.1:8050
+curl http://10.8.0.3:8050
+sudo iptables -L -n -v | grep 8050
+sudo nft list ruleset | grep 8050
+podman stop wg-easy
+podman ps -a
+ip addr
+ip route
+podman compose -f docker-compose.yaml  up -d
+ip route
+podman ps -a
+podman logs -f -wg-easy
+podman logs -f wg-easy
+podman stop wg-easy
+podman ps -a
+podman rm wg-easy
+podman ps -a
+podman compose -f docker-compose.yaml  up -d
+podman ps -a
+podman logs -f wg-easy
+podman ps -a
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman logs -f wg-easy
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman logs -f wg-easy
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+ip addr
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman logs -f wg-easy
+podman exec -it wg-easy sh
+ip route
+ip addr
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman logs -f wg-easy
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman logs -f wg-easy
+rpm-ostree status
+lsmod | grep wireguard
+wg --version
+podman rm -f wg-easy
+ll
+podman compose -f docker-compose.yaml  up -d
+podman logs -f wg-easy
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman logs -f wg-easy
+zoom
+flatpak list
+flatpak run us.zoom.Zoom
+ll
+ps -ef | grep -i zoom
+killall zoom
+ps -ef | grep -i zoom
 flatpak update
-rpm-ostree update
-rpm-ostree status 
+b
+sudo vi /etc/wireguard/Laptop.conf
+ping google.com
+sudo vi /etc/wireguard/Laptop.conf
+sudo wg-quick up Laptop
+ip a
+ping 10.8.0.3
+ping 10.8.0.2
+code .
 toolbox enter 
+ll
+sudo vi /etc/wireguard/Laptop.conf
+ll
+ip addr
 rpm-ostree update
-rpm-ostree status 
+ip route show
+sudo wg-quick up Laptop
+ip addr
+ip route show
+tracert 8.8.8.8
+trace route 8.8.8.8
+tracepath 1.1.1.1
+tracepath google.com
+traceroute 1.1.1.1
+10.8.0.3/24
+traceroute google.com
+dns install traceroute
+rpm-ostree install traceroute
+rpm-ostree status
 reboot
-python jpm_login.py 03995574
-top
-ll
-fwupdmgr update
-exit
 toolbox enter 
-fwupdmgr update
-kk
-aws sso login --profile S3_RW_access-766644654959 
 ll
-rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
-ll s3
-top
+podman ps -a
+podman stop pihole
+podman ps -a
 rpm-ostree update
-exit
-toolbox enter 
 toolbox enter 
 rpm-ostree update
-flatpak update
 ll
 top
 ll
-kk
-aws sso login --profile S3_RW_access-766644654959 
+sudo wg-quick up Laptop
+sudo wg-quick down Laptop
+sudo wg-quick up Laptop
+sudo cat /etc/wireguard/Laptop.conf
+ip a show dev Laptop
+ip a show 
+ip a show dev Laptop
+clear
+ip a show dev Laptop
+wg
+sudo wg
+sudo cat /etc/wireguard/Laptop.conf
+wg
+sudo wg
+sudo vi /etc/wireguard/Laptop.conf
+sudo wg-quick down Laptop
+sudo vi /etc/wireguard/Laptop.conf
+sudo wg-quick up Laptop
+ip rule show
+tracepath 1.1.1.1
+ping 1.1.1.1
+ping -o 1.1.1.1
+ping -O 1.1.1.1
+tracepath 1.1.1.1
+ping google.com
+ip rule show
+ip a show dev Laptop
+ip a show
+iptables -t nat -A POSTROUTING -o ens4 -j MASQUERADE
+sudo iptables -t nat -A POSTROUTING -o ens4 -j MASQUERADE
+sudo wg-quick down Laptop
+sudo wg-quick up Laptop
+sudo wg-quick down Laptop
+ip addr
+podman ps -a
+podman exec -it wg-easy sh
+code .
+eit
 ll
-ll s3
-ll google
-rclone mount gdrive: google --daemon
+exit
+python jpm_login.py 79990689
+exit
+exit
+exit
+cd
+python jpm_login.py 53588548
+echo "Daytona,Workspace"
+echo "Daytona,Workspace" 
+echo "Daytona,Workspace"  | base64 
+vi ~/.bashrc
+sudo dnf update -y
+exit
+git log
+podman ps -a
+cd IdeaProjects/caddy/
+ll
+cd wg-easy/
+ll
+podman compose -f docker-compose.yaml  up -d
+podman ps -a
+podman logs -f wg-easy
+podman compose -f pihole_compose.yaml  down
+podman ps -a
+podman stop wg-easy
+podman compose -f docker-compose.yaml  up -d
+podman ps -a
+podman logs -f wg-easy
+podman compose -f docker-compose.yaml  up --build -d
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up --build -d
+podman logs -f wg-easy
+podman compose -f docker-compose.yaml  up --build -d
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up --build -d
+podman logs -f wg-easy
+podman rm -f wg-easy
+podman compose -f docker-compose.yaml  up --build -d
+podman logs -f wg-easy
+podman rm -f wg-easy
+ll
+uptime
+toolbox enter 
+rpm-ostree update
+rpm-ostree status
+rpm-ostree update
+reboot
+toolbox enter 
+ll
+cd wg-easy/
+toolbox enter 
+ll
+cd
+python jpm_login.py 79990689
+toolbox enter 
+ll
+uvx --from git+https://github.com/dhan78/option_tracker.git option-tracker
+exit
+sudo dnf update -y
+top
+ll
+code .
+aws sso login --profile S3_RW_access-766644654959
+fireox
+firefox
+which firefox
+dnf install firefox
+sudo dnf install firefox
+which firefox
+sudo dnf install firefox
+sudo yum reinstall ca-certificates
+sudo dnf update -y
+exit
+sudo dnf install firefox
+sudo yum reinstall openssl
+sudo dnf reinstall ca-certificates
+podman ps -a
+exit
+source /var/home/admin/IdeaProjects/eod_prices/.venv/bin/activate
+sudo dnf reinstall ca-certificates
+python jpm_login.py 87006770
+which rclone
+which firefox
+firefox
+sudo dnf install firefox
+        sudo update-ca-trust extract
+sudo dnf install firefox
+sudo update-ca-trust extract
+sudo dnf install firefox
+podman ps -a
+exit
+rpm-ostree status
+toolbox enter 
+rpm-ostree status
+podman ps -a
+podman stop 231
+toolbox enter 
+podman ps -a
+podman rm -f 231
+toolbox create
+toolbox enter 
+rpm-ostree status
 exit
 ll
-sudo dnf -y update
+sudo update-ca-trust extract
+rpm-ostree update
+toolbox enter 
 exit
-toolbox enter 
-toolbox run code IdeaProjects/eod_prices/
-toolbox enter 
-flatpak update
 ll
-kk
+rpm-ostree update
+toolbox enter 
+podman ps -a --format "{{.Names}}"
+sudo podman mount toolbox-f42
+sudo mkdir -p /var/lib/toolbox/f42/etc/pki
+sudo mount --bind /etc/pki /var/lib/toolbox/f42/etc/pki
+sudo podman umount toolbox-f42
+SUDO MOUNT --BIND /ETC/PKI /VAR/LIB/TOOLBOX/F42/ETC/PKID=$(podman ps -a --filter "name=fedora-toolbox-42" --format "{{.ID}}")
+sudo podman mount $CID
+ll
+sudo mkdir -p /var/lib/toolbox/fedora-toolbox-42/etc/pki
+sudo mount --bind /etc/pki /var/lib/toolbox/fedora-toolbox-42/etc/pki
+sudo podman umount $CID
+toolbox enter
+sudo dnf update -y
+ps aux | grep p11-kit
+ll
+ps aux | grep p11-kit
+pkill -f -9 p11-kit 
+ps aux | grep p11-kit
+exit
+ps aux | grep p11-kit
+sudo dnf update -y
+pkill -f -9 p11-kit 
+exit
+sudo dnf update -y
+python jpm_login.py 93044120
+sudo update-ca-trust extract
+sudo dnf reinstall ca-certificates
+ll /etc/pkcs11/modules/p11-kit-trust.module
+rm /etc/pkcs11/modules/p11-kit-trust.module
+ll /etc/pkcs11/modules/p11-kit-trust.module
+sudo rm /etc/pkcs11/modules/p11-kit-trust.module
+ll /etc/pkcs11/modules/p11-kit-trust.module
+sudo dnf remove p11-kit-client
+sudo dnf remove p11-kit-server
+exit
+rpm-ostree update
+ll
+rpm-ostree update
+rpm-ostree status
+ll
+toolbox enter
+podman ps -a --format "{{.Names}}"
+podman stop fedora-toolbox-42
+toolbox enter
+podman stop fedora-toolbox-42
+toolbox enter
+exit
+python jpm_login.py 99951713
+toolbox enter
+exit
+exit
+exit
+sudo update-ca-trust extract
+ll /etc/pki
+cd /etc/pki
+ll
+cd ..
+exit
+sudo dnf update -y
+ls -l /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+sudo update-ca-trust extract
+sudo dnf install ca-certificates
+sudo update-ca-trust force-enable
+sudo update-ca-trust extract
+ls -l /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+toolbox enter
+sudo rm -rf /etc/pki
+sudo cp -r /usr/share/pki /etc/pki   # temporary seed
+sudo cp -r /etc/pki /etc/pki.backup  # optional safety
+sudo cp -r /run/host/etc/pki/* /etc/pki/
+exit
+nautilus
+exit
+toolbox run nautilus
+exit
+osource /var/home/admin/IdeaProjects/eod_prices/.venv/bin/activate
+g
+git log
+ll
+source /var/home/admin/IdeaProjects/eod_prices/.venv/bin/activate
+toolbox run nautilus
+ls -l /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+ll /etc/pki
+ll /usr/share/pki
+toolbox enter
+rpm-ostree status
+sudo dnf update -y
+exit
+exit

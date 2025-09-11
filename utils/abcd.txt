@@ -92,6 +92,7 @@ https://github.com/BehnamAxo/grpc-vs-rest/blob/main/grpc/proto/user.proto
 guacamole setup: https://www.youtube.com/watch?v=BqoZznqWXwo&t=3s
 
 wireguard EC2 configuration Fantastic demo: https://www.youtube.com/watch?v=GL5rphZ7wUQ
+docker debug using debugpy Fantastic demo: https://www.youtube.com/watch?v=j-oOwDlNRv8
 
 FineTuning LLM very good video: https://www.youtube.com/watch?v=Lt7KrFMcCis
 netbird key: D3A77B34-F01B-4E89-BA55-71FB69F4F7C4

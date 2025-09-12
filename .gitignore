@@ -27,3 +27,5 @@ nohup.out
 data_store.sqlite
 /venv/
 utils/data/
+
+utils/rclone.conf

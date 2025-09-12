@@ -1,14 +1,3 @@
-ll
-cat docker-compose.yaml 
-podman ps -a
-podman stop wg-easy
-ll
-podman compose -f docker-compose.yaml  up -d
-ip route
-curl http://127.0.0.1:8050
-curl http://10.8.0.3:8050
-sudo iptables -L -n -v | grep 8050
-sudo nft list ruleset | grep 8050
 podman stop wg-easy
 podman ps -a
 ip addr
@@ -925,3 +914,89 @@ sudo dnf update -y
 ll
 t
 exit
+source /var/home/admin/IdeaProjects/eod_prices/.venv/bin/activate
+cd
+python jpm_login.py 90851620
+python jpm_login.py 66734091
+code .
+exit
+ll
+cd ..
+ll
+sudo chown pihole_data
+ip link
+sudo wg show
+sudo ss -ulpn | grep 51820
+ip addr
+192.168.0.x
+sudo firewall-cmd --get-active-zones
+sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-interface=wg0
+sudo firewall-cmd --get-active-zones
+sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-masquerade
+sudo firewall-cmd --zone=FedoraWorkstation --list-all
+sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-interface=wg0
+sudo firewall-cmd --reload
+sudo firewall-cmd --zone=FedoraWorkstation --list-all
+sysctl net.ipv4.ip_forward
+toolbox enter
+reboot
+uvx --from git+https://github.com/dhan78/option_tracker.git option-tracker
+rpm-ostree update
+rpm-ostree status 
+sudo podman ps -a
+podman ps -a
+podman logs -f wgdashboard 
+cd
+toolbox enter
+rpm-ostree update
+ll
+top
+/uvx
+uvx --from git+https://github.com/dhan78/option_tracker.git option-tracker
+code .
+ll
+cd ..
+ll
+sudo sh
+ll
+rm -rf wg-easy/
+ll
+cd ..
+ll
+cd caddy
+ll
+vi docker-compose.yaml 
+exit
+cd
+aws sso login --profile S3_RW_access-766644654959
+ll
+which rclone
+ll
+vi ~.bash_history-00421.tmp
+vi .bash_history-00421.tmp
+vi ~/.bash_history-00421.tmp
+sudo dnf install vim
+ll ~/.bash*
+cat ~/.bash*
+cat ~/.bash* 
+cat ~/.bash*  | grep -i rclone
+cat ~/.bash*  | grep -i mount
+rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon
+cd s3
+ll
+cd ..
+ll
+cd google
+ll
+cd ..
+rclone mount gdrive: google --daemon
+cd google
+ll
+cat /var/home/admin/.config/rclone/rclone.conf
+ll ~/aws
+ll
+cd
+python jpm_login.py 52807724
+exit
+git statsu
+git status

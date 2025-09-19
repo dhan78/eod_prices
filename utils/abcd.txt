@@ -34,6 +34,7 @@ https://www.pro-craft.com/shipping-faqs (Very Good site)
 https://www.meetdandy.com/ Fantastic online workflow
 
 AWS deployment (NextJS)
+nextjs quick tutorial Fantastic walkthrough: https://www.youtube.com/watch?v=LkDelp5WWYU
 ---------------------------------------------------------------
 https://www.youtube.com/watch?v=KAV8vo7hGAo  (Stats at 7:33 )
 ---------------------------------------------------------------

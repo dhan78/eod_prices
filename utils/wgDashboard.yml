@@ -1,0 +1,24 @@
+services:
+  wireguard-dashboard:
+    image: donaldzou/wgdashboard:latest
+    restart: unless-stopped
+    container_name: wgdashboard
+    environment:
+      # - tz=NewYork/                # <--- Set container timezone, default: Europe/Amsterdam.
+      #- public_ip=         # <--- Set public IP to ensure the correct one is chosen, defaulting to the IP give by ifconfig.me.
+      #- wgd_port=          # <--- Set the port WGDashboard will use for its web-server.
+    ports:
+      - 10086:10086/tcp
+      - 51820:51820/udp
+    volumes:
+      - aconf:/etc/amnezia/amneziawg
+      - conf:/etc/wireguard
+      - data:/data
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+volumes:
+  aconf:
+  conf:
+  data:

@@ -35,6 +35,7 @@ https://www.meetdandy.com/ Fantastic online workflow
 
 AWS deployment (NextJS)
 nextjs quick tutorial Fantastic walkthrough: https://www.youtube.com/watch?v=LkDelp5WWYU
+nextjs Increased Next.js App Performance by 30%. : https://www.youtube.com/watch?v=kdqL0zbA3xQ
 ---------------------------------------------------------------
 https://www.youtube.com/watch?v=KAV8vo7hGAo  (Stats at 7:33 )
 ---------------------------------------------------------------

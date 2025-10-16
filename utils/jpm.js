@@ -14,7 +14,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 import os from "os";
 
-const JPM_LOGIN_URL = "http://myworkspace.jpmchase.com";
+const JPM_LOGIN_URL = "https://myworkspace.jpmchase.com";
 const DOWNLOAD_DIR = path.join(os.homedir(), "Downloads");
 const ICA_GLOB = /\.ica$/i;
 const WAIT_ELEMENT_TIMEOUT = 20000; // ms

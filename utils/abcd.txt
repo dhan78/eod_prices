@@ -71,17 +71,18 @@ Python ASYNC/AWAIT
 https://www.youtube.com/watch?v=1z8LLSZSWHM
 
 
+admin@toolbx:/var/home/admin$ cat ~/.aws/config 
 [profile S3_RW_access-766644654959]
-sso_session = new_config
+sso_session = laptop_access
 sso_account_id = 766644654959
 sso_role_name = S3_RW_access
-region = us-east-2
 [default]
 region = us-east-2
-[sso-session new_config]
+[sso-session laptop_access]
 sso_start_url = https://d-9a6764dafd.awsapps.com/start
 sso_region = us-east-2
 sso_registration_scopes = sso:account:access
+admin@toolbx:/var/home/admin$ 
 
 
 

@@ -49,5 +49,3 @@ alias gdrive="rclone mount gdrive: google --daemon"
 
 #source ~/IdeaProjects/eod_prices/venv_intellij/bin/activate
 export PS1='$(whoami)@$(hostname):$(pwd)\$ '
-export DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock
-

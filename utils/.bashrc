@@ -32,10 +32,6 @@ PS1='[\u@\h \W]\$ '
 set -o vi
 alias ll="ls -lrt"
 alias vi="vim"
-export FZF_DEFAULT_COMMAND="find -L"
-alias vi="vim"
-alias vf='vim $(fzf)'
-alias cdf='cd $(fzf)'
 alias u="sudo dnf update && flatpak update"
 alias kk="killall ptyxis"
 

@@ -72,16 +72,14 @@ https://www.youtube.com/watch?v=1z8LLSZSWHM
 
 
 admin@toolbx:/var/home/admin$ cat ~/.aws/config 
-[profile S3_RW_access-766644654959]
-sso_session = laptop_access
-sso_account_id = 766644654959
-sso_role_name = S3_RW_access
 [default]
 region = us-east-2
-[sso-session laptop_access]
+[profile S3_RW_access-766644654959]
 sso_start_url = https://d-9a6764dafd.awsapps.com/start
 sso_region = us-east-2
-sso_registration_scopes = sso:account:access
+sso_account_id = 766644654959
+sso_role_name = S3_RW_access
+region = us-east-2
 admin@toolbx:/var/home/admin$ 
 
 

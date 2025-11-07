@@ -16,6 +16,7 @@ korapathy
 batholey
 chamkodey
 dakoskey
+bhairana
 
 
 https://www.youtube.com/watch?v=Ad-inC3mJfU&t=127s
@@ -72,14 +73,16 @@ https://www.youtube.com/watch?v=1z8LLSZSWHM
 
 
 admin@toolbx:/var/home/admin$ cat ~/.aws/config 
-[default]
-region = us-east-2
 [profile S3_RW_access-766644654959]
-sso_start_url = https://d-9a6764dafd.awsapps.com/start
-sso_region = us-east-2
+sso_session = laptop_access
 sso_account_id = 766644654959
 sso_role_name = S3_RW_access
+[default]
 region = us-east-2
+[sso-session laptop_access]
+sso_start_url = https://d-9a6764dafd.awsapps.com/start
+sso_region = us-east-2
+sso_registration_scopes = sso:account:access
 admin@toolbx:/var/home/admin$ 
 
 
@@ -114,3 +117,6 @@ prod:
 Key : dLP6kJGXXxpd_5qceu8kRGtWCtiMsyyP8YX
 Secret : [REDACTED_GODADDY_SECRET_2]
 godaddy -----------end---------
+
+
+https://github.com/evidentlyai/evidently/blob/ad71e132d59ac3a84fce6cf27bd50b12b10d9137/examples/how_to_questions/how_to_build_metric_over_python_function.ipynb

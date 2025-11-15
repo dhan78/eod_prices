@@ -44,7 +44,7 @@ export JPM_PASSWORD="Daytona,Workspace"
 
 alias b="gsettings set org.gnome.desktop.interface text-scaling-factor 1.5"
 alias s="gsettings set org.gnome.desktop.interface text-scaling-factor 1.0"
-alias s3="rclone mount aws:filebucketdhan ~/s3 -vv --s3-profile S3_RW_access-766644654959 --daemon"
+alias s3='AWS_PROFILE=S3_RW_access-766644654959 rclone mount aws:filebucketdhan ~/s3 --daemon --vfs-cache-mode writes --allow-other'
 alias gdrive="rclone mount gdrive: google --daemon"
 
 #source ~/IdeaProjects/eod_prices/venv_intellij/bin/activate

@@ -125,3 +125,13 @@ https://github.com/evidentlyai/evidently/blob/ad71e132d59ac3a84fce6cf27bd50b12b1
 
 cryptop tax free selling: CRUD: https://www.youtube.com/watch?v=IKZWgS-rYbI
 
+
+eval $(aws_signing_helper credential-process \
+  --certificate ~/myCA/client.cert.pem \
+  --private-key ~/myCA/client.key.pem \
+  --trust-anchor-arn arn:aws:rolesanywhere:us-east-2:766644654959:trust-anchor/64223e6a-dc21-4bb7-a103-f7068abfa7ad \
+  --profile-arn arn:aws:rolesanywhere:us-east-2:766644654959:profile/869940c7-9e84-4d99-819a-b1e9c33805f6 \
+  --role-arn arn:aws:iam::766644654959:role/JDLab_S3_FullAccess \
+  | jq -r '"export AWS_ACCESS_KEY_ID=\(.AccessKeyId) AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey) AWS_SESSION_TOKEN=\(.SessionToken)"')
+
+

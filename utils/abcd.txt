@@ -81,10 +81,11 @@ sso_region = us-east-2
 sso_account_id = 766644654959
 sso_role_name = S3_RW_access
 region = us-east-2
+
 [profile s3_rolesanywhere]
-credential_process = aws_signing_helper credential-process --certificate /var/home/admin/myCA/client.cert.pem --private-key /var/home/admin/myCA/client.key.pem --trust-anchor-arn arn:aws:rolesanywhere:us-east-2:766644654959:trust-anchor/64223e6a-dc21-4bb7-a103-f7068abfa7ad --profile-arn arn:aws:rolesanywhere:us-east-2:766644654959:profile/869940c7-9e84-4d99-819a-b1e9c33805f6 --role-arn arn:aws:iam::766644654959:role/JDLab_S3_FullAccess
 region = us-east-2
-output = json
+credential_process = aws_signing_helper credential-process --certificate /var/home/admin/myCA/client.cert.pem --private-key /var/home/admin/myCA/client.key.pem --trust-anchor-arn arn:aws:rolesanywhere:us-east-2:766644654959:trust-anchor/64223e6a-dc21-4bb7-a103-f7068abfa7ad --profile-arn arn:aws:rolesanywhere:us-east-2:766644654959:profile/869940c7-9e84-4d99-819a-b1e9c33805f6 --role-arn arn:aws:iam::766644654959:role/JDLab_S3_FullAccess
+
 admin@toolbx:/var/home/admin$ 
 
 

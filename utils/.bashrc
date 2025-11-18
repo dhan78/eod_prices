@@ -32,7 +32,7 @@ PS1='[\u@\h \W]\$ '
 set -o vi
 alias ll="ls -lrt"
 alias vi="vim"
-alias u="sudo dnf update && flatpak update"
+alias u="rpm-ostree update && flatpak update"
 alias kk="killall ptyxis"
 
 if [ -d "$HOME/.local/bin" ] ; then
@@ -42,10 +42,13 @@ alias reboot="systemctl reboot -i"
 export JPM_USER="v032823"
 export JPM_PASSWORD="Daytona,Workspace"
 
+
 alias b="gsettings set org.gnome.desktop.interface text-scaling-factor 1.5"
 alias s="gsettings set org.gnome.desktop.interface text-scaling-factor 1.0"
-alias s3='AWS_PROFILE=S3_RW_access-766644654959 rclone mount aws:filebucketdhan ~/s3 --daemon --vfs-cache-mode writes --allow-other'
+alias t="ptyxis --tab-with-profile=1a15b599330c73f669116af269018f83"
+alias f="ptyxis --tab-with-profile=2a16b82c662d729e6f29c15568d5d68f"
+export AWS_PROFILE=s3_rolesanywhere
+alias s3='AWS_PROFILE=s3_rolesanywhere rclone mount aws:filebucketdhan /var/home/admin/s3 --daemon --vfs-cache-mode writes --allow-other'
 alias gdrive="rclone mount gdrive: google --daemon"
 
-#source ~/IdeaProjects/eod_prices/venv_intellij/bin/activate
 export PS1='$(whoami)@$(hostname):$(pwd)\$ '

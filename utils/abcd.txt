@@ -136,3 +136,5 @@ eval $(aws_signing_helper credential-process \
   | jq -r '"export AWS_ACCESS_KEY_ID=\(.AccessKeyId) AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey) AWS_SESSION_TOKEN=\(.SessionToken)"')
 
 
+PrismaClient: (Solution):
+https://jpmc.udemy.com/course/nextjs-ecommerce-course/learn/lecture/47608605#questions/23285867

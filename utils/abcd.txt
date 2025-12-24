@@ -123,6 +123,7 @@ godaddy -----------end---------
 
 
 https://github.com/evidentlyai/evidently/blob/ad71e132d59ac3a84fce6cf27bd50b12b10d9137/examples/how_to_questions/how_to_build_metric_over_python_function.ipynb
+https://github.com/evidentlyai/evidently/blob/ad71e132d59ac3a84fce6cf27bd50b12b10d9137/examples/how_to_questions/how_to_run_calculations_on_spark.ipynb
 
 cryptop tax free selling: CRUD: https://www.youtube.com/watch?v=IKZWgS-rYbI
 

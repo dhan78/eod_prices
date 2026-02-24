@@ -33,6 +33,7 @@ https://www.youtube.com/watch?v=j-oOwDlNRv8&t=45s  python -m debugpy --listen 0.
 Dental LAB: 
 https://www.pro-craft.com/shipping-faqs (Very Good site)
 https://www.meetdandy.com/ Fantastic online workflow
+https://poseydentallab.com/all-ceramic-restorations/ (good digital workflow content)
 
 AWS deployment (NextJS)
 nextjs quick tutorial Fantastic walkthrough: https://www.youtube.com/watch?v=LkDelp5WWYU

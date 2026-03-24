@@ -13,7 +13,7 @@ alias ll='ls -lrth'
 alias vi=vim
 set -o vi
 
-# Updates & system
+# Updates & system shortcuts
 alias u='rpm-ostree update && flatpak update'
 alias reboot='systemctl reboot -i'
 alias kk='killall ptyxis'
@@ -31,36 +31,28 @@ export JPM_USER="v032823"
 export JPM_PASSWORD="Daytona,Workspace"
 export AWS_PROFILE=s3_rolesanywhere
 
-# SSL Fix: Point everything to the verified system bundle
+# SSL Fix: Points to the verified 2.5MB system bundle
 export SSL_CERT_FILE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
 export CURL_CA_BUNDLE=$SSL_CERT_FILE
 export AWS_CRT_CA_BUNDLE=$SSL_CERT_FILE
 
-# Export AWS credentials
-if command -v aws &> /dev/null; then
-    eval $(aws configure export-credentials --profile "$AWS_PROFILE" --format env 2>/dev/null)
-fi
-
-# ——— AUTOMATIC S3 MOUNT ———
+# ——— AUTOMATIC S3 MOUNT (LIVE - NO CACHE) ———
 if [[ -t 0 ]]; then
-    # Ensure cache dir
-    [[ ! -d /tmp/mountpoint-cache ]] && mkdir -p /tmp/mountpoint-cache && chmod 1777 /tmp/mountpoint-cache
-
     # Auto-mount only if not already mounted
     if ! mountpoint -q /var/home/admin/s3 2>/dev/null; then
+        # Removed --cache and set --metadata-ttl 0 for live Nautilus views
         mount-s3 filebucketdhan /var/home/admin/s3 \
             --allow-other \
-            --cache /tmp/mountpoint-cache \
-            --max-cache-size 5120 \
-            --metadata-ttl 600 --foreground >/tmp/mount-s3.log 2>&1 &
+            --metadata-ttl 0 \
+            --foreground >/tmp/mount-s3.log 2>&1 &
         disown
-        echo "S3 auto-mounted → /var/home/admin/s3"
+        echo "S3 auto-mounted (Live mode, No Cache) → /var/home/admin/s3"
     fi
 fi
 
-# Aliases for Manual Controls
-alias s3mount='mount-s3 filebucketdhan /var/home/admin/s3 --allow-other --cache /tmp/mountpoint-cache --max-cache-size 5120 --metadata-ttl 600 --foreground >/tmp/mount-s3.log 2>&1 & disown'
-alias s3unmount='sudo umount /var/home/admin/s3'
+# Manual Controls
+alias s3unmount='sudo umount -l /var/home/admin/s3'
+alias s3remount='s3unmount && mount-s3 filebucketdhan /var/home/admin/s3 --allow-other --metadata-ttl 0 --foreground >/tmp/mount-s3.log 2>&1 & disown'
 alias gdrive='rclone mount gdrive: /var/home/admin/google --daemon --allow-other &'
 
 # Prompt
@@ -69,4 +61,3 @@ PS1='$(whoami)@$(hostname):$(pwd)\$ '
 # pnpm
 export PNPM_HOME="/var/home/admin/.local/share/pnpm"
 [[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
-

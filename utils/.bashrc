@@ -7,6 +7,10 @@ export PATH="$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH"
 # Stop here if non-interactive
 [[ $- != *i* ]] && return
 
+vi() {
+    flatpak run org.vim.Vim "$@"
+}
+
 # Basics
 alias ls='ls --color=auto'
 alias ll='ls -lrth'

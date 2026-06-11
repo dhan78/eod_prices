@@ -138,13 +138,6 @@ eval $(aws_signing_helper credential-process \
   | jq -r '"export AWS_ACCESS_KEY_ID=\(.AccessKeyId) AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey) AWS_SESSION_TOKEN=\(.SessionToken)"')
 
 
-Description: Outline Email Secret
-clientid: 9c95cbdf-481c-457a-a39e-d8f235382957
-tenantid: e01718ea-2985-40f1-b972-0579a47e71a2
-value: [REDACTED_AZURE_SECRET]
-secretid: 86454489-4ec9-4d1a-9a8e-7091c80077e3
-
-
 
 
 

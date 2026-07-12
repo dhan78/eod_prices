@@ -1,0 +1,213 @@
+version: '3.8'
+
+# Universal JIT template function optimized for Podman, Node, Postgres, and Bash Cron tasks
+x-ssm-loader: &ssm-loader
+  entrypoint: >
+    /bin/sh -c "
+      set -e;
+      echo '==================================================';
+      echo '🔐 Connecting to AWS Systems Manager Parameter Store...';
+      echo '==================================================';
+      
+      if command -v aws >/dev/null 2>&1; then
+        RAW_DATA=\$(aws ssm get-parameters-by-path --path \"\${SSM_PATH}\" --recursive --with-decryption --region \"\${AWS_REGION:-us-east-1}\" --query 'Parameters[*].[Name,Value]' --output text);
+        
+        if [ -z \"\$RAW_DATA\" ]; then
+          echo \"❌ ERROR: No parameters found or Access Denied under path: \${SSM_PATH}\";
+          exit 1;
+        fi;
+        
+        echo \"\$RAW_DATA\" | while IFS=\$\'\t\' read -r name value; do
+          if [ -n \"\$name\" ]; then
+            CLEAN_KEY=\$(echo \"\$name\" | sed \"s|^\${SSM_PATH}||\");
+            echo \"✅ Loaded parameter: \${CLEAN_KEY}\";
+          fi;
+        done;
+        
+        set +e;
+        eval \$(echo \"\$RAW_DATA\" | sed \"s|\${SSM_PATH}|export |\" | awk -F\'\t\' '{print \$1\"=\\\"\"\$2\"\\\"\"}');
+        
+        echo '==================================================';
+        echo '🚀 Parameters injected successfully.';
+        echo '==================================================';
+      else
+        echo '⚠️ AWS CLI missing in container image. Relying on static fallback values.';
+      fi;
+      
+      # DYNAMIC STRING BUILDER: Assembles isolated database targets based on container role
+      if [ -n \"\$POSTGRES_PASSWORD\" ]; then
+        export PGPASSWORD=\"\${POSTGRES_PASSWORD}\";
+        export DATABASE_URL=\"postgresql://\${POSTGRES_USER:-postgres}:\${POSTGRES_PASSWORD}@postgres-prostore:5432/\${POSTGRES_DB:-neondb}?schema=public\";
+        echo \"🔗 Built dynamic DATABASE_URL targeting 'postgres-prostore:5432'\";
+      fi;
+      
+      # CONTAINER BOOT RUNTIME EXECUTION ROUTER
+      if [ \"\$\$CONTAINER_ROLE\" = \"database\" ]; then
+        exec docker-entrypoint.sh postgres;
+      else
+        exec \"\$\@\";
+      fi;
+    "
+
+services:
+  # --- Existing site (jdlab.us) ---
+  nextjs:
+    <<: *ssm-loader
+    image: ghcr.io/dhan78/jdlab:latest
+    container_name: jdlab-nextjs
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - AWS_REGION=us-east-1
+      - SSM_PATH=/jdlab/
+      - CONTAINER_ROLE=frontend
+    volumes:
+      - ~/.aws:/root/.aws:ro,z
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+        reservations:
+          memory: 128m
+    command: ["node", "server.js"]
+
+  # --- Prostore (shop.jdlab.us) ---
+  db:
+    <<: *ssm-loader
+    image: postgres:18.3
+    container_name: postgres-prostore
+    restart: always
+    environment:
+      - AWS_REGION=us-east-1
+      - SSM_PATH=/jdlab/db/
+      - CONTAINER_ROLE=database
+    volumes:
+      - postgres_data:/var/lib/postgresql:z
+      - ~/.aws:/root/.aws:ro,z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d neondb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    <<: *ssm-loader
+    image: ghcr.io/dhan78/prostore:latest
+    container_name: prostore-app
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - AWS_REGION=us-east-1
+      - SSM_PATH=/jdlab/prostore/
+      - CONTAINER_ROLE=backend
+      - AUTH_TRUST_HOST=true
+      - NODE_OPTIONS=""
+    volumes:
+      - ~/.aws:/root/.aws:ro,z
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["node", "server.js"]
+
+  # --- outline ---
+  outline:
+    <<: *ssm-loader
+    image: outlinewiki/outline:latest
+    container_name: outline
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - AWS_REGION=us-east-1
+      - SSM_PATH=/jdlab/outline/
+      - CONTAINER_ROLE=wiki
+      - REDIS_URL=redis://outline-redis:6379
+    volumes:
+      - ~/.aws:/root/.aws:ro,z
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["yarn", "start"]
+
+  redis:
+    image: redis:alpine
+    container_name: outline-redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+
+  # --- Reverse proxy (handles both sites + auto HTTPS) ---
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro,z
+      - caddy_data:/data:z
+      - caddy_config:/config:z
+    depends_on:
+      - nextjs
+      - app
+      - outline 
+
+  # --- Database Backup Service (Daily full backup) ---
+  db-backup:
+    <<: *ssm-loader
+    image: postgres:18-alpine
+    container_name: postgres-backup
+    restart: unless-stopped
+    environment:
+      - AWS_REGION=us-east-1
+      - SSM_PATH=/jdlab/db/
+      - CONTAINER_ROLE=backup
+      - AWS_EC2_METADATA_DISABLED=false
+    volumes:
+      - ./backups:/backups:z
+      - ~/.aws:/root/.aws:ro,z
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c '
+        apk add --no-cache aws-cli
+        echo "=== Backup & S3 Sync started ==="
+
+        while true; do
+          DATE=$$(date +"%Y-%m-%d_%H-%M-%S")
+          BACKUP_FILE="/backups/full_backup-$${DATE}.sql.gz"
+
+          echo "[$(date)] Starting dump from host: postgres-prostore..."
+          if pg_dumpall -h postgres-prostore -U \${POSTGRES_USER:-postgres} --clean --if-exists | gzip > "$${BACKUP_FILE}"; then
+            echo "✓ Backup successful. Size: $$(du -h $${BACKUP_FILE} | cut -f1)"
+            
+            echo "Uploading to S3..."
+            if aws s3 cp "$${BACKUP_FILE}" "\${S3_BUCKET_URL}"; then
+              echo "✓ S3 Sync complete."
+            else
+              echo "✗ S3 Sync failed."
+            fi
+          else
+            echo "✗ Database dump failed!"
+            rm -f "$${BACKUP_FILE}"
+          fi
+
+          find /backups -name "full_backup-*.sql.gz" -mtime +7 -delete
+          echo "Sleeping 24h..."
+          sleep 86400
+        done
+      '
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

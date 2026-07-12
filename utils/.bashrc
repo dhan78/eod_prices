@@ -38,7 +38,7 @@ alias reboot='systemctl reboot -i'
 alias kk='killall ptyxis'
 
 # Text scaling shortcuts
-alias b='gsettings set org.gnome.desktop.interface text-scaling-factor 1.32'
+alias b='gsettings set org.gnome.desktop.interface text-scaling-factor 1.26'
 alias s='gsettings set org.gnome.desktop.interface text-scaling-factor 1.0'
 
 # Terminal profiles
@@ -61,7 +61,6 @@ if [[ -t 0 ]]; then
     if ! mountpoint -q /var/home/admin/s3 2>/dev/null; then
         # Removed --cache and set --metadata-ttl 0 for live Nautilus views
         mount-s3 filebucketdhan /var/home/admin/s3 \
-            --allow-other \
             --metadata-ttl 0 \
             --foreground >/tmp/mount-s3.log 2>&1 &
         disown
@@ -78,4 +77,25 @@ alias gdrive='rclone mount gdrive: /var/home/admin/google --daemon --allow-other
 # pnpm
 export PNPM_HOME="/var/home/admin/.local/share/pnpm"
 [[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
-export GITHUB_PAT="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123"
+export GITHUB_PAT="ghp_****"
+ghcr-list() {
+    local repo_name="$1"
+
+    if [ -z "$repo_name" ]; then
+        echo "Usage: ghcr-list <repository-name>"
+        echo "Example: ghcr-list jdlab-public"
+        return 1
+    fi
+
+    echo -e "VERSION\tTAGS\tCREATED"
+    echo "------------------------------------------------------------"
+
+    curl -s -H "Authorization: token $GITHUB_PAT" \
+         "https://api.github.com/user/packages/container/${repo_name}/versions" \
+    | jq -r '.[] | [
+        .name,
+        (.metadata.container.tags | join(", ") | if . == "" then "-" else . end),
+        .created_at[0:10]
+      ] | @tsv' \
+    | column -t -s $'\t'
+}

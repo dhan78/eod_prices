@@ -41,11 +41,15 @@ x-ssm-loader: &ssm-loader
         echo \"🔗 Built dynamic DATABASE_URL targeting 'postgres-prostore:5432'\";
       fi;
       
-      # CONTAINER BOOT RUNTIME EXECUTION ROUTER
+      # ENGINE SELECTOR ROUTER (Launches correct processes natively based on service flags)
       if [ \"\$\$CONTAINER_ROLE\" = \"database\" ]; then
         exec docker-entrypoint.sh postgres;
-      else
+      elif [ \"\规律CONTAINER_ROLE\" = \"wiki\" ]; then
+        exec yarn start;
+      elif [ \"\$\$CONTAINER_ROLE\" = \"backup\" ]; then
         exec \"\$\@\";
+      else
+        exec node server.js;
       fi;
     "
 
@@ -70,7 +74,6 @@ services:
           memory: 256m
         reservations:
           memory: 128m
-    command: ["node", "server.js"]
 
   # --- Prostore (shop.jdlab.us) ---
   db:
@@ -109,7 +112,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["node", "server.js"]
 
   # --- outline ---
   outline:
@@ -131,7 +133,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: ["yarn", "start"]
 
   redis:
     image: redis:alpine
@@ -161,6 +162,7 @@ services:
       - outline 
 
   # --- Database Backup Service (Daily full backup) ---
+  # --- Database Backup Service (Daily full backup) ---
   db-backup:
     <<: *ssm-loader
     image: postgres:18-alpine
@@ -186,12 +188,13 @@ services:
           DATE=$$(date +"%Y-%m-%d_%H-%M-%S")
           BACKUP_FILE="/backups/full_backup-$${DATE}.sql.gz"
 
+          # FIX: Added double dollar signs ($$) to ensure the parameters evaluate inside the runtime subshell layer
           echo "[$(date)] Starting dump from host: postgres-prostore..."
-          if pg_dumpall -h postgres-prostore -U \${POSTGRES_USER:-postgres} --clean --if-exists | gzip > "$${BACKUP_FILE}"; then
+          if pg_dumpall -h postgres-prostore -U \$${POSTGRES_USER:-postgres} --clean --if-exists | gzip > "$${BACKUP_FILE}"; then
             echo "✓ Backup successful. Size: $$(du -h $${BACKUP_FILE} | cut -f1)"
             
             echo "Uploading to S3..."
-            if aws s3 cp "$${BACKUP_FILE}" "\${S3_BUCKET_URL}"; then
+            if aws s3 cp "$${BACKUP_FILE}" "\$${S3_BUCKET_URL}"; then
               echo "✓ S3 Sync complete."
             else
               echo "✗ S3 Sync failed."
@@ -206,6 +209,7 @@ services:
           sleep 86400
         done
       '
+
 
 volumes:
   postgres_data:

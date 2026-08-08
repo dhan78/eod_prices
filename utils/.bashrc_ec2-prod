@@ -30,6 +30,7 @@ ssm_secrets_list() {
   local search_pattern="${1:-/}"
   local region="${2:-us-east-1}"
   local profile="$3"
+  local max_val="${SSM_MAX_VALUE_LEN:-60}"   # elide decrypted values longer than this
 
   if ! command -v aws >/dev/null 2>&1; then
     echo "❌ Error: AWS CLI is not installed."
@@ -70,14 +71,30 @@ ssm_secrets_list() {
       echo "========================================================================================================================"
       echo "🔍 MATCHED PATH / PATTERN: '$search_pattern' ($region)"
       echo "========================================================================================================================"
-      printf "%-30s %-15s %-45s %-20s\n" "PARAMETER NAME" "TYPE" "DECRYPTED VALUE" "LAST MODIFIED"
+      printf "%-40s %-14s %-62s %-20s\n" "PARAMETER NAME" "TYPE" "DECRYPTED VALUE" "LAST MODIFIED"
       echo "------------------------------------------------------------------------------------------------------------------------"
 
-      # Filter data case-insensitively using awk
-      echo "$raw_output" | awk -v pat="$regex_pattern" '
+      echo "$raw_output" | awk -F'\t' -v pat="$regex_pattern" -v maxv="$max_val" '
         BEGIN { IGNORECASE = 1 }
-        $1 ~ pat { print }
-      ' | sort -u | column -t -s $'\t'
+        $1 ~ pat {
+          # 1) Elide an over-long decrypted value (field 3) so the table stays tidy.
+          if (length($3) > maxv) { $3 = substr($3, 1, maxv - 1) "…" }
+
+          # 2) TREE-ORDER key: mark each path segment leaf(0)/folder(1) so that at
+          #    EVERY level the leaves sort before the sub-folders. e.g. all
+          #    /jdlab/<key> come before /jdlab/db/..., /jdlab/outline/..., etc.
+          #    \001 separator keeps segments comparing cleanly.
+          m = split($1, seg, "/")            # seg[1]="" (leading /); real segs 2..m
+          key = ""
+          for (i = 2; i <= m; i++) {
+            key = key "\001" (i == m ? "0" : "1") seg[i]
+          }
+          print key "\t" $1 "\t" $2 "\t" $3 "\t" $4
+        }
+      ' \
+        | sort -f -t $'\t' -k1,1 -u \
+        | cut -f2- \
+        | column -t -s $'\t'
     ) | less -S
   else
     echo "❌ No matching parameters found, or Access Denied."

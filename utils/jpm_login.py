@@ -2,6 +2,11 @@
 JPMorgan Workspace Login Automation Module.
 Handles automated login and ICA client launch for JPM Workspace.
 """
+# /// script
+# dependencies = [
+#   "selenium>=4.34.2"
+# ]
+# ///
 
 import os
 import subprocess
@@ -40,6 +45,7 @@ class WorkspaceAutomation:
     """Automates JPMorgan Workspace login and ICA client launch."""
 
     XPATHS = {
+        "login_redirect": '//button[contains(text(),"LOGIN PAGE")] | //a[contains(text(),"LOGIN PAGE")]',
         "login": '//*[@id="login"]',
         "password1": '(//input[@type="password"])[1]',
         "password2": '(//input[@type="password"])[2]',
@@ -86,8 +92,34 @@ class WorkspaceAutomation:
             time.sleep(1)
         raise TimeoutError("Timed out waiting for ICA file download.")
 
+    def _handle_overlay(self) -> None:
+        """Wait for the obscuring message box overlay to disappear or handle it directly."""
+        try:
+            WebDriverWait(self.driver, 5).until(
+                EC.invisibility_of_element_located((By.ID, "genericMessageBoxOverlay"))
+            )
+        except Exception:
+            # If it's still present, try forcing it hidden via Javascript or clicking it away
+            try:
+                overlay = self.driver.find_element(By.ID, "genericMessageBoxOverlay")
+                if overlay.is_displayed():
+                    self.driver.execute_script("arguments[0].style.display='none';", overlay)
+                    self._log("Forced overlay invisibility via DOM modification.")
+            except Exception:
+                pass
+
     def _login(self) -> None:
-        """Execute login sequence."""
+        """Execute login sequence, handling intermediate redirect pages if present."""
+        # Handle "You cannot login from here" landing page if encountered
+        try:
+            redirect_btn = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, self.XPATHS["login_redirect"]))
+            )
+            self._log("Encountered intermediate landing screen. Redirecting to actual login page...")
+            redirect_btn.click()
+        except Exception:
+            pass
+
         self._log("Starting login sequence...")
         self._wait_for_element(self.XPATHS["login"]).send_keys(self.config.username)
         self._wait_for_element(self.XPATHS["password1"]).send_keys(self.config.password)
@@ -96,15 +128,33 @@ class WorkspaceAutomation:
         self._log("Login completed")
 
     def _setup_and_launch_workspace(self) -> None:
-        """Configure protocol handlers and launch workspace application."""
+        """Configure protocol handlers and launch workspace application safely around overlays."""
         self._log("Setting up handlers and launching workspace...")
         for action in ("install", "detect", "disclaimer"):
             try:
                 self._wait_for_element(self.XPATHS[action], timeout=5).click()
             except Exception:
                 pass  # Element may not always be present
-        self._wait_for_element(self.XPATHS["workspace"]).click()
-        self._wait_for_element(self.XPATHS["open"]).click()
+        
+        # Clear overlay obstacles before selecting the workspace
+        self._handle_overlay()
+        
+        # Click Workspace tile using a safe JS fallback if native click gets intercepted
+        try:
+            self._wait_for_element(self.XPATHS["workspace"]).click()
+        except Exception:
+            self._log("Native click intercepted on workspace element. Attempting JavaScript click fallback...")
+            workspace_el = self.driver.find_element(By.XPATH, self.XPATHS["workspace"])
+            self.driver.execute_script("arguments[0].click();", workspace_el)
+
+        # Click Open App using a safe JS fallback if native click gets intercepted
+        try:
+            self._wait_for_element(self.XPATHS["open"]).click()
+        except Exception:
+            self._log("Native click intercepted on open element. Attempting JavaScript click fallback...")
+            open_el = self.driver.find_element(By.XPATH, self.XPATHS["open"])
+            self.driver.execute_script("arguments[0].click();", open_el)
+
         self._log("Workspace setup and launch completed")
 
     def _start_ica_client(self, ica_file: Path) -> None:
@@ -115,6 +165,7 @@ class WorkspaceAutomation:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+
     def _setup_driver_and_run(self) -> None:
         """Setup webdriver, perform login, launch workspace, and cleanup."""
         options = Options()
@@ -138,7 +189,6 @@ class WorkspaceAutomation:
         except Exception as e:
             self._log(f"Error during automation: {e}")
             raise
-
 
 
 def main() -> None:
